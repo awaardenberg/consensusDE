@@ -1,0 +1,44 @@
+Package: consensusDE
+Type: Package
+Title: An extensible package for RNA-seq analysis using multiple algorithms 
+Version: 0.99.1
+Author: Ashley J. Waardenberg
+Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
+Description: This package allows users to perform automatic DE analysis. It 
+    seeks consensus by performing DE analysis using multiple algorithms. 
+    Currently it supports "Voom", "EdgeR" and "DESeq", but can be easily 
+    extended. It uses RUV-seq (optional) to remove batch effects.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.1.0
+Suggests: 
+    knitr,
+    rmarkdown,
+    TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+    airway
+VignetteBuilder: knitr
+biocViews: 
+    Transcriptomics,
+    MultipleComparison, 
+    Clustering
+Depends: 
+    R (>= 3.5)
+Imports:
+    limma,
+    AnnotationDbi,
+    Biobase,
+    edgeR,
+    BiocParallel,
+    GenomicAlignments,
+    EDASeq,
+    RColorBrewer,
+    GenomicFeatures,
+    SummarizedExperiment,
+    DESeq2 (>= 1.20.0),
+    pcaMethods,
+    dendextend,
+    RUVSeq,
+    Rsamtools,
+    S4Vectors,
+    stats

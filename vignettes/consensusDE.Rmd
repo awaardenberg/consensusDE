@@ -1,0 +1,378 @@
+---
+title: 'consensusDE: DE analysis using multiple algorithms'
+author: "Ashley J. Waardenberg"
+date: 'Last modified: 2018-09-28. Compiled: `r Sys.Date()`'
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: no
+      smooth_scroll: no
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  word_document:
+    toc: yes
+    toc_depth: '3'
+vignette: >
+  %\VignetteIndexEntry{consensusDE}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+# setting of some global variables
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  #comment = "#>",
+  library(airway),
+  library(TxDb.Dmelanogaster.UCSC.dm3.ensGene),
+  library(consensusDE),
+  data("airway"),
+  colData(airway)$group <- colData(airway)$dex,
+  colData(airway)$file <- rownames(colData(airway)),
+  all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
+                                         ruv.correct = TRUE,
+                                         paired = "unpaired"),
+  all.pairs.airway <- multi.de.pairs(summarised = airway,
+                                     ruv.correct = FALSE,
+                                     paired = "unpaired"),
+  comparison <- all.pairs.airway$merged[["untrt-trt"]],
+  comparison.list <- list("untrt-trt" = comparison),
+  colnames(comparison.list[["untrt-trt"]]) <- gsub("edger.adj.p", "Adj.PVal",
+                                      colnames(comparison.list[["untrt-trt"]]))
+
+)
+```
+
+# Introduction to consensusDE
+
+consensusDE aims to make first pass differential expression (DE) analysis, with reporting of significance scores from multiple methods ***easy***. It implements wrappers for Voom, DEseq2 and EdgeR and reports differential expression results seperately, as well as merging the results into a single table for determining ***consensus***. The results of the merged table, are ordered by the summed ranks of the p-values for each algorithm.
+
+Core functionality is simplified into two function:
+
++ **```read.summarised()```** generate a summarised experiment that counts reads mapped (from bam files) against a transcriptome
++ **```multi.de.pairs()```** perform DE analysis (all possible pairwise comparisons)
+
+Below, we demonstrate the core functionality of consensusDE as well as how to plot results from obtained results using the diag.plots() function.
+
+# consensusDE examples
+
+Begin by first installing and then loading the consensusDE library:
+
+```{r eval=FALSE}
+library(consensusDE)
+```
+
+To illustrate functionality of consensusDE, we will utilise data from the airway and annotation libraries as follows. Begin by installing and attaching data from these libraries:
+
+```{r eval=FALSE}
+source("https://bioconductor.org/biocLite.R")
+biocLite("airway")
+biocLite("TxDb.Dmelanogaster.UCSC.dm3.ensGene")
+biocLite("org.Hs.eg.db")
+
+# attach airway data
+library(airway)
+library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
+library(org.Hs.eg.db)
+
+data("airway")
+```
+
+# Building a summarised experiment
+
+A summarised experiment is an object format that stores all the relevant information for performing differential expression analysis. ```read.summarised()``` allows users to build a summarised object by simply providing 1) a table of bam files (more below on format), 2) a directory of where to locate the bam files and 3) a transcript database to map the reads to (either a gtf file or txdb). We will use bam files attached to this package (from GenomicAlignments) as an example:
+
+```{r eval=FALSE}
+# build a design table that lists the files and their grouping
+file.list <- list.files(system.file("extdata", package="GenomicAlignments"), 
+                        recursive = TRUE, 
+                        pattern = "*bam$", 
+                        full = TRUE)
+
+# create a sample table to be used with read.summarised()
+# must be comprised of a minimum of two columns, named "file" and "group", with one additional column: "pairing" if the data is paired
+sample.table <- data.frame("file" = basename(file.list),
+                           "group" = c("treat", "untreat"))
+
+# extract the path to the bam directory - where to search for files listed in "sample.table"
+bam.dir <- as.character(gsub(basename(file.list)[1], "", file.list[1]))
+
+```
+
+The minimum information is now ready to build a summarised experiment as follows:
+
+```{r eval=FALSE}
+summarised.dm3 <- read.summarised(sample.table = sample.table,
+                                  bam.dir = bam.dir,
+                                  tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+                                  read.format = "paired")
+```
+
+This will output a summarised object that has mapped the reads for the bam files that are listed in ```sample.table```, located in ```bam.dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read.format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, using the ```gtf``` parameter. To save the summarised experiment externally, for future use, specify the path to save the summarised experiment using ```output.log``` To see details of all parameters see ```?read.summarised```.
+
+Overview of the summarised experiment:
+```{r eval=FALSE}
+summarised.dm3
+
+# class: RangedSummarizedExperiment 
+# dim: 15682 2 
+# metadata(0):
+# assays(1): counts
+# rownames(15682): FBgn0000003 FBgn0000008 ... FBgn0264726 FBgn0264727
+# rowData names(0):
+# colnames(2): sm_treated1.bam sm_untreated1.bam
+# colData names(2): file group
+```
+
+## Filtering low count data
+
+```read.summarised()``` also allows users to filter out low read counts. This can be done when building the summarised experiment, or re-running with the summarised experiment output using ```read.summarised()```.
+
+
+# Performing Differential Expresssion
+
+For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models.
+
+```{r eval=FALSE}
+# for compatability, add "group" and "file" columns
+colData(airway)$group <- colData(airway)$dex
+colData(airway)$file <- rownames(colData(airway))
+
+# call multi.de.pairs()
+all.pairs.airway <- multi.de.pairs(summarised = airway,
+                                   paired = "unpaired")
+
+```
+
+Running ```multi.de.pairs()``` will perform DE analysis on all possible pairs of "groups" and save these results as a simple list of "merged" - being the merged results of "deseq", "voom" and "edger", as well as the latter three as objects independently. To access the merged results:
+
+```{r eval=FALSE}
+# To view all the comparisons conducted:
+names(all.pairs.airway$merged)
+# [1] "untrt-trt"
+
+# to access data of a particular comparison
+head(all.pairs.airway$merged[["untrt-trt"]])
+
+#                ID  AveExpr     LogFC  edger.adj.p   deseq.adj.p   voom.adj.p edger.rank deseq.rank voom.rank rank.sum
+# 1 ENSG00000152583 4.165462 -4.584682 7.394381e-77 3.305162e-100 0.0001167735          1          1       5.5        2
+# 2 ENSG00000179094 4.418980 -3.167542 3.668782e-42  3.489360e-52 0.0001167735          2          3       5.5        5
+# 3 ENSG00000120129 6.643013 -2.932826 1.317059e-35  1.053772e-44 0.0001701497          3          6      15.5        9
+# 4 ENSG00000125148 7.022630 -2.188282 3.384057e-34  1.075551e-46 0.0001167735          5          5       5.5       10
+# 5 ENSG00000189221 5.949117 -3.288819 6.150389e-35  6.745924e-44 0.0001352246          4          7      10.0       11
+# 6 ENSG00000109906 1.379279 -7.127073 4.428411e-33  1.040974e-43 0.0036384580          7          8     214.5       15
+
+```
+
+## Annotating DE results
+
+It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ```tx.db``` and setting ```ensembl.annotate = TRUE```. See ```?multi.de.pairs``` for additional documentation.
+
+## Writing tables to an output directory
+
+```multi.de.pairs``` provides options to automatically write all results to output directories when a full path is provided. Which results are output depends on which directories are provided. Full paths provided to the parameters of ```output.voom```, ```output.edger```, ```output.deseq``` and ```output.combined``` will output Voom, EdgeR, DEseq and the merged results to the directories provided, respectively.
+
+# Removing unwanted variation (RUV)
+
+consensusDE also provides the option to remove batch effects through RUVseq functionality. consensusDE currently implements RUVr which models a first pass generalised linear model (GLM) using EdgeR and obtaining residuals for incorporation into the SummarizedExperiment object for inclusion in the models for DE analysis. The following example, uses RUV to identify these residuals. To view the residuals in the model see the resisuals section below in the plotting functions. Note, that if ```ruv.correct = TRUE``` and a path to a ```plot.dir``` is provided, diagnostic plots before and after RUV correction will be produced. The residuals can also be accessed in the SummarisedExperiment as below. These are present in the "W_1" column. At present only one factor of variation is determined.
+
+```{r eval=FALSE}
+
+all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
+                                      ruv.correct = TRUE,
+                                      paired = "unpaired")
+
+# access the summarised experiment (now including the residuals under the "W_1" column)
+
+colData(all.pairs.airway.ruv$summarised)
+
+# DataFrame with 8 rows and 3 columns
+#                  file    group                 W_1
+#              <factor> <factor>           <numeric>
+# SRR1039508 SRR1039508    untrt  -0.234250790140052
+# SRR1039509 SRR1039509      trt  -0.255748751886882
+# SRR1039512 SRR1039512    untrt -0.0588656399483224
+# SRR1039513 SRR1039513      trt  -0.163415250398772
+# SRR1039516 SRR1039516    untrt   0.530301453586907
+# SRR1039517 SRR1039517      trt   0.669420860493564
+# SRR1039520 SRR1039520    untrt  -0.217209420371017
+# SRR1039521 SRR1039521      trt  -0.270232461335423
+
+```
+
+# Plotting functions
+
+When performing DE analysis, a series of plots (currently 10) can be generated and saved as .pdf files in a plot directory provided to ```multi.de.pairs()``` with the parameter: ```plot.dir = "/path/to/save/pdfs/```. See ```?multi.de.pairs``` for description. 
+
+In addition, each of the 10 plots can be plotted individually using the ```diag.plots``` function. See ```?diag.plots``` for description, which provides wrappers for 10 different plots. Next we will plot each of these using the example data.
+
+## Mapped reads
+
+Plot the number of reads that mapped to the transcriptome of each sample. The sample numbers on the x-axis correspond to the sample row number in the SummarisedExperiment built, accessible using ```colData(airway)```. Samples are coloured by their "group".
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           mapped.reads = TRUE)
+```
+
+## Relative Log Expression
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           rle = TRUE)
+```
+
+## Principle Component Analysis
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           pca = TRUE)
+```
+
+## RUV residuals
+
+Note the access variable for the list.
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = all.pairs.airway.ruv$summarised,
+           name = "airway example data",
+           residuals = TRUE)
+```
+
+## Hierarchical Clustering
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           hclust = TRUE)
+```
+
+## Density distribution
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           density = TRUE)
+```
+
+## Boxplot
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(se.in = airway,
+           name = "airway example data",
+           boxplot = TRUE)
+```
+
+## MA plot
+
+This will perform an MA plot given a dataset of the appropriate structure. This will plot the Log-fold change (M) versus the average expression level (A). To use independently of ```multi.de.pairs()``` and plot to only one comparison, constructing a list with one data.frame with the columns labelled "ID", "AveExpr", and "Adj.PVal" is required. The following illustrates an example for using the merged data, which needs to be put into a list and labelled appropriately. Note that this is done automatically with ```multi.de.pairs()```.
+
+```{r eval=FALSE}
+# 1. View all the comparisons conducted
+names(all.pairs.airway$merged)
+[1] "untrt-trt"
+
+# 2. Extract the data.frame of interest of a particular comparison
+comparison <- all.pairs.airway$merged[["untrt-trt"]]
+
+# this will not work unless in a list and will stop, producing an error. E.g.
+diag.plots(merged.in = comparison,
+           name = "untrt-trt",
+           ma = TRUE)
+
+# Error message:
+merged.in is not a list. If you want to plot with one comparison only,
+put the single dataframe into a list as follows. my.list <- list("name"=
+merged.in)
+
+# 3. Put into a new list as instructed by the error
+comparison.list <- list("untrt-trt" = comparison)
+
+# this will not work unless the appropriate columns are labelled
+# "ID", "AveExpr", and "Adj.PVal"
+
+diag.plots(merged.in = comparison.list,
+           name = "untrt-trt",
+           ma = TRUE)
+# Error message:
+merged.in contains 1 slots that are not
+"data.frame" objects with column names containing "ID", "AveExpr", and
+"Adj.PVal".
+
+# 3. Relabel the columns for plotting
+# inspecting the column names reveals that the "Adj.PVal" column needs to be specified.
+colnames(comparison.list[["untrt-trt"]])
+
+# replace "edger.adj.p" with "Adj.PVal" to use this p-value, using the "gsub" command as follows
+colnames(comparison.list[["untrt-trt"]]) <- gsub("edger.adj.p", "Adj.PVal",
+                                                 colnames(comparison.list[["untrt-trt"]]))
+
+```
+```{r echo=TRUE, message=FALSE}
+# 4. Plot MA
+diag.plots(merged.in = comparison.list,
+           name = "untrt-trt",
+           ma = TRUE)
+```
+
+## Volcano
+
+This plot a volcano plot, which compares the Log-fold change versus significance of change -log transformed score. As above and described in the MA plot section, to use independently of ```multi.de.pairs()``` and plot to only one comparison, constructing a list with one data.frame with the columns labelled "ID", "AveExpr", and "Adj.PVal" is required.
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(merged.in = comparison.list,
+           name = "untrt-trt",
+           volcano = TRUE)
+```
+
+## P-value distribution
+
+This plot the distribution of p-values for diagnostic analyses. As above and described in the MA plot section, to use independently of ```multi.de.pairs()``` and plot to only one comparison, constructing a list with one data.frame with the columns labelled "ID", "AveExpr", and "Adj.PVal" is required.
+
+```{r echo=TRUE, message=FALSE}
+diag.plots(merged.in = comparison.list,
+           name = "untrt-trt",
+           p.dist = TRUE)
+```
+
+### General notes about plotting.
+
+The legend and labels can be turned off using ```legend = FALSE``` and ```label = TRUE``` for ```diag.plots()```. See ```?diag.plots``` for more details of these parameters.
+
+# Accessing additional data for each comparison
+
+When performing DE analysis, data is stored in simple list object that can be accessed. Below are the levels of data available from the output of a DE analysis. We use the ```all.pairs.airway``` results from the above analysis to demonstrate how to locate these tables.
+
+* ```all.pairs.airway$merged```
+    * list of the comparisons performed
+
+In addition to the list with the combined results of DESeq2, Voom and EdgeR, the full results can be accessed for each method, as well as fit tables and the contrasts performed.
+
+* ```all.pairs.airway$deseq``` (list of the DEseq2 results)
+* ```all.pairs.airway$voom``` (list of the Voom results)
+* ```all.pairs.airway$edger``` (list of the edgeR results)
+
+Within each list the following data is accessible. Each object is list of all the comparisons performed.
+
+* ```all.pairs.airway$deseq$short.results```
+    * Formatted results. To access the first table, for examples, use ```all.pairs.airway$deseq$short.results[[1]]```
+* ```all.pairs.airway$deseq$full.results```
+    * Full results that normally ouput by a pairwise comparison
+* ```all.pairs.airway$deseq$fitted```
+    * Fit table to access coeffients etc.
+* ```all.pairs.airway$deseq$contrasts```
+    * Contrasts performed
+
+# Citing results that use ```consensusDE```
+
+When using this package, please cite the following when you use the results:
+
+
