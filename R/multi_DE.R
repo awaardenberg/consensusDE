@@ -58,12 +58,16 @@
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
-#' ## Run multi.de.pairs() with RUV correction:
-#' all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
-#'                                        ruv.correct = TRUE,
-#'                                        paired = "unpaired")
+#' #' ## Filter low count data:
+#' airway.filter <- read.summarised(summarised = airway,
+#'                                  filter = TRUE)
+#' ## Run multi.de.pairs() with-out RUV correction
+#' ## To run with RUV correction, use ruv.correct = TRUE
+#' all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+#'                                    ruv.correct = FALSE,
+#'                                    paired = "unpaired")
 #'
-#' @return A list of all the comparison conducted.
+#' @return A list of all the comparisons conducted.
 #' ## See vignette for details.
 #'
 #' @export multi.de.pairs

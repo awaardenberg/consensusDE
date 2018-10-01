@@ -34,11 +34,8 @@ knitr::opts_chunk$set(
   data("airway"),
   colData(airway)$group <- colData(airway)$dex,
   colData(airway)$file <- rownames(colData(airway)),
-  all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
-                                         ruv.correct = TRUE,
-                                         paired = "unpaired"),
   all.pairs.airway <- multi.de.pairs(summarised = airway,
-                                     ruv.correct = FALSE,
+                                     ruv.correct = TRUE,
                                      paired = "unpaired"),
   comparison <- all.pairs.airway$merged[["untrt-trt"]],
   comparison.list <- list("untrt-trt" = comparison),
@@ -61,15 +58,13 @@ Below, we demonstrate the core functionality of consensusDE as well as how to pl
 
 # consensusDE examples
 
-Begin by first installing and then loading the consensusDE library:
+Begin by first installing and then loading the consensusDE library. To illustrate functionality of consensusDE, we will utilise data from the airway and annotation libraries as follows. Begin by installing and attaching data from these libraries:
 
 ```{r eval=FALSE}
+# load consensusDE
 library(consensusDE)
-```
 
-To illustrate functionality of consensusDE, we will utilise data from the airway and annotation libraries as follows. Begin by installing and attaching data from these libraries:
-
-```{r eval=FALSE}
+# install airway package if not installed
 source("https://bioconductor.org/biocLite.R")
 biocLite("airway")
 biocLite("TxDb.Dmelanogaster.UCSC.dm3.ensGene")
@@ -136,7 +131,7 @@ summarised.dm3
 
 # Performing Differential Expresssion
 
-For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models.
+For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models. Here, we also remove unwanted variation (ruv.correct = TRUE): see below for more details on RUV analsis.
 
 ```{r eval=FALSE}
 # for compatability, add "group" and "file" columns
@@ -145,7 +140,8 @@ colData(airway)$file <- rownames(colData(airway))
 
 # call multi.de.pairs()
 all.pairs.airway <- multi.de.pairs(summarised = airway,
-                                   paired = "unpaired")
+                                   paired = "unpaired",
+                                   ruv.correct = TRUE)
 
 ```
 
@@ -183,13 +179,8 @@ consensusDE also provides the option to remove batch effects through RUVseq func
 
 ```{r eval=FALSE}
 
-all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
-                                      ruv.correct = TRUE,
-                                      paired = "unpaired")
-
 # access the summarised experiment (now including the residuals under the "W_1" column)
-
-colData(all.pairs.airway.ruv$summarised)
+colData(all.pairs.airway$summarised)
 
 # DataFrame with 8 rows and 3 columns
 #                  file    group                 W_1
@@ -242,7 +233,7 @@ diag.plots(se.in = airway,
 Note the access variable for the list.
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = all.pairs.airway.ruv$summarised,
+diag.plots(se.in = all.pairs.airway$summarised,
            name = "airway example data",
            residuals = TRUE)
 ```

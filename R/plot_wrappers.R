@@ -90,9 +90,12 @@
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
+#' ## Filter low count data:
+#' airway.filter <- read.summarised(summarised = airway,
+#'                                  filter = TRUE)
 #' ## Below we will perform a PCA plot
 #' ## see vignette for more details of displaying each plot
-#'diag.plots(se.in = airway,
+#'diag.plots(se.in = airway.filter,
 #'           name = "airway example data",
 #'           pca = TRUE)
 #'
