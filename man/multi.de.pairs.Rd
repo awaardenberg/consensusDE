@@ -68,7 +68,7 @@ normalised data to the same directory. Default = NULL}
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
 }
 \value{
-A list of all the comparison conducted.
+A list of all the comparisons conducted.
 ## See vignette for details.
 }
 \description{
@@ -86,9 +86,14 @@ data("airway")
 colData(airway)$group <- colData(airway)$dex
 ## Identify the file locations
 colData(airway)$file <- rownames(colData(airway))
-## Run multi.de.pairs() with RUV correction:
-all.pairs.airway.ruv <- multi.de.pairs(summarised = airway,
-                                       ruv.correct = TRUE,
-                                       paired = "unpaired")
-
+\dontrun{  
+#' ## Filter low count data:
+airway.filter <- read.summarised(summarised = airway,
+                                 filter = TRUE)
+## Run multi.de.pairs() with-out RUV correction
+## To run with RUV correction, use ruv.correct = TRUE
+all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+                                   ruv.correct = FALSE,
+                                   paired = "unpaired")
+}
 }

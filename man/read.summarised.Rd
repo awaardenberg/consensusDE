@@ -84,7 +84,7 @@ file.list <- list.files(system.file("extdata", package="GenomicAlignments"),
                         recursive = TRUE,
                         pattern = "*bam$",
                         full = TRUE)
-
+\dontrun{
 ## create a sample table to be used with read.summarised()
 ## must be comprised of a minimum of two columns, named "file" and "group",
 ## with one additional column: "pairing" if the data is paired
@@ -98,5 +98,5 @@ summarised.dm3 <- read.summarised(sample.table = sample.table,
                                   bam.dir = bam.dir,
                                   tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
                                   read.format = "paired")
-
+}
 }

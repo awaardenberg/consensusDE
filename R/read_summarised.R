@@ -56,7 +56,7 @@
 #'                         recursive = TRUE,
 #'                         pattern = "*bam$",
 #'                         full = TRUE)
-#'
+#' \dontrun{
 #' ## create a sample table to be used with read.summarised()
 #' ## must be comprised of a minimum of two columns, named "file" and "group",
 #' ## with one additional column: "pairing" if the data is paired
@@ -66,12 +66,11 @@
 #' # extract the path to the bam directory - where to search for files listed in
 #' ## "sample.table"
 #' bam.dir <- as.character(gsub(basename(file.list)[1], "", file.list[1]))
-
 #' summarised.dm3 <- read.summarised(sample.table = sample.table,
 #'                                   bam.dir = bam.dir,
 #'                                   tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
 #'                                   read.format = "paired")
-#'
+#' }
 #' @return A summarised experiment
 #'
 #' @export read.summarised

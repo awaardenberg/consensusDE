@@ -34,9 +34,11 @@ knitr::opts_chunk$set(
   data("airway"),
   colData(airway)$group <- colData(airway)$dex,
   colData(airway)$file <- rownames(colData(airway)),
-  all.pairs.airway <- multi.de.pairs(summarised = airway,
-                                     ruv.correct = TRUE,
-                                     paired = "unpaired"),
+  airway.filter <- read.summarised(summarised = airway,
+                                 filter = TRUE),
+  all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+                                   ruv.correct = TRUE,
+                                   paired = "unpaired"),
   comparison <- all.pairs.airway$merged[["untrt-trt"]],
   comparison.list <- list("untrt-trt" = comparison),
   colnames(comparison.list[["untrt-trt"]]) <- gsub("edger.adj.p", "Adj.PVal",
@@ -126,8 +128,7 @@ summarised.dm3
 
 ## Filtering low count data
 
-```read.summarised()``` also allows users to filter out low read counts. This can be done when building the summarised experiment, or re-running with the summarised experiment output using ```read.summarised()```.
-
+```read.summarised()``` also allows users to filter out low read counts. This can be done when building the summarised experiment, or re-running with the summarised experiment output using ```read.summarised()```. See "Performing Differential Expresssion" below with filter example.
 
 # Performing Differential Expresssion
 
@@ -138,8 +139,12 @@ For differential expression (DE) analysis we will use the ```airway``` data for 
 colData(airway)$group <- colData(airway)$dex
 colData(airway)$file <- rownames(colData(airway))
 
+# filter low count data
+airway.filter <- read.summarised(summarised = airway,
+                                 filter = TRUE),
+
 # call multi.de.pairs()
-all.pairs.airway <- multi.de.pairs(summarised = airway,
+all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
                                    paired = "unpaired",
                                    ruv.correct = TRUE)
 
@@ -156,13 +161,12 @@ names(all.pairs.airway$merged)
 head(all.pairs.airway$merged[["untrt-trt"]])
 
 #                ID  AveExpr     LogFC  edger.adj.p   deseq.adj.p   voom.adj.p edger.rank deseq.rank voom.rank rank.sum
-# 1 ENSG00000152583 4.165462 -4.584682 7.394381e-77 3.305162e-100 0.0001167735          1          1       5.5        2
-# 2 ENSG00000179094 4.418980 -3.167542 3.668782e-42  3.489360e-52 0.0001167735          2          3       5.5        5
-# 3 ENSG00000120129 6.643013 -2.932826 1.317059e-35  1.053772e-44 0.0001701497          3          6      15.5        9
-# 4 ENSG00000125148 7.022630 -2.188282 3.384057e-34  1.075551e-46 0.0001167735          5          5       5.5       10
-# 5 ENSG00000189221 5.949117 -3.288819 6.150389e-35  6.745924e-44 0.0001352246          4          7      10.0       11
-# 6 ENSG00000109906 1.379279 -7.127073 4.428411e-33  1.040974e-43 0.0036384580          7          8     214.5       15
-
+# 1 ENSG00000152583 4.167526 -4.592421 1.401835e-77 4.899290e-101 0.0001912819          1          1       3.0        2
+# 2 ENSG00000179094 4.421045 -3.174709 1.916678e-43  2.571782e-53 0.0001912819          2          4       3.0        6
+# 3 ENSG00000125148 7.024695 -2.193869 5.720619e-37  2.327802e-49 0.0001912819          3          5       3.0        8
+# 4 ENSG00000120129 6.645078 -2.940229 1.781875e-36  3.252389e-45 0.0002261997          4          6       9.5       10
+# 5 ENSG00000189221 5.951182 -3.295864 6.755715e-36  2.685507e-44 0.0002261997          5          7       9.5       12
+# 6 ENSG00000178695 6.452348  2.509288 2.446246e-35  2.029146e-42 0.0002261997          6          8       9.5       1
 ```
 
 ## Annotating DE results
@@ -185,15 +189,14 @@ colData(all.pairs.airway$summarised)
 # DataFrame with 8 rows and 3 columns
 #                  file    group                 W_1
 #              <factor> <factor>           <numeric>
-# SRR1039508 SRR1039508    untrt  -0.234250790140052
-# SRR1039509 SRR1039509      trt  -0.255748751886882
-# SRR1039512 SRR1039512    untrt -0.0588656399483224
-# SRR1039513 SRR1039513      trt  -0.163415250398772
-# SRR1039516 SRR1039516    untrt   0.530301453586907
-# SRR1039517 SRR1039517      trt   0.669420860493564
-# SRR1039520 SRR1039520    untrt  -0.217209420371017
-# SRR1039521 SRR1039521      trt  -0.270232461335423
-
+# SRR1039508 SRR1039508    untrt  -0.178818470707727
+# SRR1039509 SRR1039509      trt  -0.179080629397833
+# SRR1039512 SRR1039512    untrt -0.0656425767211961
+# SRR1039513 SRR1039513      trt  -0.204750827643172
+# SRR1039516 SRR1039516    untrt   0.503958546186301
+# SRR1039517 SRR1039517      trt   0.688380539806824
+# SRR1039520 SRR1039520    untrt  -0.244566806101967
+# SRR1039521 SRR1039521      trt  -0.319479775421234
 ```
 
 # Plotting functions
@@ -207,7 +210,7 @@ In addition, each of the 10 plots can be plotted individually using the ```diag.
 Plot the number of reads that mapped to the transcriptome of each sample. The sample numbers on the x-axis correspond to the sample row number in the SummarisedExperiment built, accessible using ```colData(airway)```. Samples are coloured by their "group".
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            mapped.reads = TRUE)
 ```
@@ -215,7 +218,7 @@ diag.plots(se.in = airway,
 ## Relative Log Expression
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            rle = TRUE)
 ```
@@ -223,7 +226,7 @@ diag.plots(se.in = airway,
 ## Principle Component Analysis
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            pca = TRUE)
 ```
@@ -241,7 +244,7 @@ diag.plots(se.in = all.pairs.airway$summarised,
 ## Hierarchical Clustering
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            hclust = TRUE)
 ```
@@ -249,7 +252,7 @@ diag.plots(se.in = airway,
 ## Density distribution
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            density = TRUE)
 ```
@@ -257,7 +260,7 @@ diag.plots(se.in = airway,
 ## Boxplot
 
 ```{r echo=TRUE, message=FALSE}
-diag.plots(se.in = airway,
+diag.plots(se.in = airway.filter,
            name = "airway example data",
            boxplot = TRUE)
 ```

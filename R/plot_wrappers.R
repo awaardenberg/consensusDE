@@ -90,6 +90,7 @@
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
+#' \dontrun{
 #' ## Filter low count data:
 #' airway.filter <- read.summarised(summarised = airway,
 #'                                  filter = TRUE)
@@ -98,7 +99,7 @@
 #'diag.plots(se.in = airway.filter,
 #'           name = "airway example data",
 #'           pca = TRUE)
-#'
+#' }
 #' @return Returns pretty plots.
 #'
 #' @export diag.plots
