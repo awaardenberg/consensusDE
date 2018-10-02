@@ -84,13 +84,14 @@
 #'
 #' @examples
 #' ## Load the example data set and attach
+#' cat("The example below will display a PCA plot before normalisation")
+#' \dontrun{
 #' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
-#' \dontrun{
 #' ## Filter low count data:
 #' airway.filter <- read.summarised(summarised = airway,
 #'                                  filter = TRUE)

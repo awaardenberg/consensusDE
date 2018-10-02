@@ -49,6 +49,8 @@
 #' @examples
 #' ## Extract summarised following example in the vignette
 #' ## load annotation tx.db for mapping reads
+#' cat("The examples below will return a summarised experiment")
+#' \dontrun{
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 #'
 #' ## build a design table that lists the files and their grouping
@@ -56,7 +58,7 @@
 #'                         recursive = TRUE,
 #'                         pattern = "*bam$",
 #'                         full = TRUE)
-#' \dontrun{
+#'
 #' ## create a sample table to be used with read.summarised()
 #' ## must be comprised of a minimum of two columns, named "file" and "group",
 #' ## with one additional column: "pairing" if the data is paired

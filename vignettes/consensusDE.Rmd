@@ -28,17 +28,18 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   #comment = "#>",
-  library(airway),
-  library(TxDb.Dmelanogaster.UCSC.dm3.ensGene),
   library(consensusDE),
+  library(airway),
   data("airway"),
   colData(airway)$group <- colData(airway)$dex,
   colData(airway)$file <- rownames(colData(airway)),
   airway.filter <- read.summarised(summarised = airway,
-                                 filter = TRUE),
+                                   filter = TRUE),
+  set.seed(1234),
+  airway.filter <- sample(airway.filter, 5000),
   all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
-                                   ruv.correct = TRUE,
-                                   paired = "unpaired"),
+                                     ruv.correct = FALSE,
+                                     paired = "unpaired"),
   comparison <- all.pairs.airway$merged[["untrt-trt"]],
   comparison.list <- list("untrt-trt" = comparison),
   colnames(comparison.list[["untrt-trt"]]) <- gsub("edger.adj.p", "Adj.PVal",
@@ -91,7 +92,7 @@ file.list <- list.files(system.file("extdata", package="GenomicAlignments"),
                         pattern = "*bam$", 
                         full = TRUE)
 
-# create a sample table to be used with read.summarised()
+# Prepare a sample table to be used with read.summarised()
 # must be comprised of a minimum of two columns, named "file" and "group", with one additional column: "pairing" if the data is paired
 sample.table <- data.frame("file" = basename(file.list),
                            "group" = c("treat", "untreat"))
@@ -132,7 +133,7 @@ summarised.dm3
 
 # Performing Differential Expresssion
 
-For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models. Here, we also remove unwanted variation (ruv.correct = TRUE): see below for more details on RUV analsis.
+For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
 
 ```{r eval=FALSE}
 # for compatability, add "group" and "file" columns
@@ -141,12 +142,16 @@ colData(airway)$file <- rownames(colData(airway))
 
 # filter low count data
 airway.filter <- read.summarised(summarised = airway,
-                                 filter = TRUE),
+                                 filter = TRUE)
+
+# for illustration, we only use sa random sample of 1000 transcripts
+set.seed(1234)
+airway.filter <- sample(airway.filter, 1000)
 
 # call multi.de.pairs()
 all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
                                    paired = "unpaired",
-                                   ruv.correct = TRUE)
+                                   ruv.correct = FALSE)
 
 ```
 
@@ -160,13 +165,13 @@ names(all.pairs.airway$merged)
 # to access data of a particular comparison
 head(all.pairs.airway$merged[["untrt-trt"]])
 
-#                ID  AveExpr     LogFC  edger.adj.p   deseq.adj.p   voom.adj.p edger.rank deseq.rank voom.rank rank.sum
-# 1 ENSG00000152583 4.167526 -4.592421 1.401835e-77 4.899290e-101 0.0001912819          1          1       3.0        2
-# 2 ENSG00000179094 4.421045 -3.174709 1.916678e-43  2.571782e-53 0.0001912819          2          4       3.0        6
-# 3 ENSG00000125148 7.024695 -2.193869 5.720619e-37  2.327802e-49 0.0001912819          3          5       3.0        8
-# 4 ENSG00000120129 6.645078 -2.940229 1.781875e-36  3.252389e-45 0.0002261997          4          6       9.5       10
-# 5 ENSG00000189221 5.951182 -3.295864 6.755715e-36  2.685507e-44 0.0002261997          5          7       9.5       12
-# 6 ENSG00000178695 6.452348  2.509288 2.446246e-35  2.029146e-42 0.0002261997          6          8       9.5       1
+#                ID   AveExpr     LogFC  edger.adj.p   deseq.adj.p   voom.adj.p edger.rank deseq.rank voom.rank rank.sum
+# 1 ENSG00000152583  7.848478 -4.579048 4.555352e-81 1.689976e-105 2.434237e-05          1          1         1        2
+# 2 ENSG00000196517  6.707906  2.238648 7.174030e-29  2.375309e-40 7.700210e-05          2          2         2        4
+# 3 ENSG00000123562 11.471330 -1.008375 9.124547e-14  8.201734e-31 3.724219e-04          6          3         3        9
+# 4 ENSG00000250978  2.929392 -6.159170 3.441794e-28  1.985784e-18 7.780662e-04          3          6         5        9
+# 5 ENSG00000103485  8.891566  1.231192 1.586426e-14  6.843112e-19 5.406701e-04          5          5         4       10
+# 6 ENSG00000169738  8.158014 -2.128064 1.381426e-15  7.176291e-18 1.424488e-03          4          8        12       12
 ```
 
 ## Annotating DE results
@@ -183,20 +188,25 @@ consensusDE also provides the option to remove batch effects through RUVseq func
 
 ```{r eval=FALSE}
 
+# call multi.de.pairs()
+all.pairs.airway.ruv <- multi.de.pairs(summarised = airway.filter,
+                                       paired = "unpaired",
+                                       ruv.correct = TRUE)
+
 # access the summarised experiment (now including the residuals under the "W_1" column)
-colData(all.pairs.airway$summarised)
+colData(all.pairs.airway.ruv$summarised)
 
 # DataFrame with 8 rows and 3 columns
 #                  file    group                 W_1
 #              <factor> <factor>           <numeric>
-# SRR1039508 SRR1039508    untrt  -0.178818470707727
-# SRR1039509 SRR1039509      trt  -0.179080629397833
-# SRR1039512 SRR1039512    untrt -0.0656425767211961
-# SRR1039513 SRR1039513      trt  -0.204750827643172
-# SRR1039516 SRR1039516    untrt   0.503958546186301
-# SRR1039517 SRR1039517      trt   0.688380539806824
-# SRR1039520 SRR1039520    untrt  -0.244566806101967
-# SRR1039521 SRR1039521      trt  -0.319479775421234
+# SRR1039508 SRR1039508    untrt  -0.142570931413377
+# SRR1039509 SRR1039509      trt  -0.178946892813184
+# SRR1039512 SRR1039512    untrt -0.0505852352323729
+# SRR1039513 SRR1039513      trt  -0.199848364864245
+# SRR1039516 SRR1039516    untrt   0.472530975797452
+# SRR1039517 SRR1039517      trt   0.703116609741865
+# SRR1039520 SRR1039520    untrt   -0.25051443379887
+# SRR1039521 SRR1039521      trt  -0.353181727417269
 ```
 
 # Plotting functions
@@ -233,9 +243,9 @@ diag.plots(se.in = airway.filter,
 
 ## RUV residuals
 
-Note the access variable for the list.
+Residuals for the RUV model can be plotted as follows:
 
-```{r echo=TRUE, message=FALSE}
+```{r eval=FALSE}
 diag.plots(se.in = all.pairs.airway$summarised,
            name = "airway example data",
            residuals = TRUE)

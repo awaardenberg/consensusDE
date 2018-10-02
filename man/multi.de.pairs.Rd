@@ -69,7 +69,7 @@ normalised data to the same directory. Default = NULL}
 }
 \value{
 A list of all the comparisons conducted.
-## See vignette for details.
+## See vignette for more details.
 }
 \description{
 Given a summarised experiment generated using read.summarised()
@@ -80,13 +80,14 @@ and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
 }
 \examples{
 ## Load the example data set and attach - see vignette for more details
+cat("The example below will perfrom DE analysis on all pairs of data")
+\dontrun{
 library(airway)
 data("airway")
 ## Name the groups of the data.
 colData(airway)$group <- colData(airway)$dex
 ## Identify the file locations
 colData(airway)$file <- rownames(colData(airway))
-\dontrun{  
 #' ## Filter low count data:
 airway.filter <- read.summarised(summarised = airway,
                                  filter = TRUE)

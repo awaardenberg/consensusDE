@@ -52,13 +52,14 @@
 #'
 #' @examples
 #' ## Load the example data set and attach - see vignette for more details
+#' cat("The example below will perfrom DE analysis on all pairs of data")
+#' \dontrun{
 #' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
-#' \dontrun{  
 #' #' ## Filter low count data:
 #' airway.filter <- read.summarised(summarised = airway,
 #'                                  filter = TRUE)
@@ -69,7 +70,7 @@
 #'                                    paired = "unpaired")
 #' }
 #' @return A list of all the comparisons conducted.
-#' ## See vignette for details.
+#' ## See vignette for more details.
 #'
 #' @export multi.de.pairs
 #'
@@ -80,7 +81,6 @@
 #' @importFrom EDASeq betweenLaneNormalization
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
-# @importFrom S4Vectors DataFrame
 
 multi.de.pairs <- function(summarised = NULL,
                            paired = "unpaired",
