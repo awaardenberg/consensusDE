@@ -8,7 +8,7 @@ To obtain the latest version from github, install devtools in R and use the foll
 
 ```R
 library(devtools)
-devtools::install_github("awaardenberg/consensusDE")
+devtools::install_github("awaardenberg/consensusDE", build_vignettes = TRUE)
 ```
 
 ## Examples
