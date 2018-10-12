@@ -114,6 +114,7 @@
 #' @importFrom Biobase pData
 #' @importFrom dendextend colored_bars set %>%
 #' @importFrom stats as.dendrogram
+#' @import airway
 
 diag.plots <- function(se.in = NULL,
                        merged.in = NULL,

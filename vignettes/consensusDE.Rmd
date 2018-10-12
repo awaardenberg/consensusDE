@@ -67,16 +67,9 @@ Begin by first installing and then loading the consensusDE library. To illustrat
 # load consensusDE
 library(consensusDE)
 
-# install airway package if not installed
-source("https://bioconductor.org/biocLite.R")
-biocLite("airway")
-biocLite("TxDb.Dmelanogaster.UCSC.dm3.ensGene")
-biocLite("org.Hs.eg.db")
-
-# attach airway data
+# load airway and dm3 transcript database for example annotation
 library(airway)
 library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
-library(org.Hs.eg.db)
 
 data("airway")
 ```

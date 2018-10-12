@@ -3,6 +3,8 @@
 export(diag.plots)
 export(multi.de.pairs)
 export(read.summarised)
+import(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
+import(airway)
 importFrom(AnnotationDbi,mapIds)
 importFrom(Biobase,pData)
 importFrom(BiocParallel,MulticoreParam)

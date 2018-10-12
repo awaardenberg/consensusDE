@@ -83,7 +83,7 @@
 #' @importFrom GenomicAlignments summarizeOverlaps
 #' @importFrom BiocParallel register MulticoreParam
 #' @importFrom edgeR filterByExpr
-# @importFrom S4Vectors DataFrame
+#' @import TxDb.Dmelanogaster.UCSC.dm3.ensGene
 
 read.summarised <- function(sample.table = NULL,
                             bam.dir = NULL,

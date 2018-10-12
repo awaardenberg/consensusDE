@@ -1,7 +1,7 @@
 Package: consensusDE
 Type: Package
 Title: An extensible package for RNA-seq analysis using multiple algorithms 
-Version: 0.99.4
+Version: 0.99.5
 Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform automatic DE analysis. It 
@@ -14,9 +14,7 @@ LazyData: true
 RoxygenNote: 6.1.0
 Suggests: 
     knitr,
-    rmarkdown,
-    TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-    airway
+    rmarkdown
 VignetteBuilder: knitr
 biocViews: 
     Transcriptomics,
@@ -41,4 +39,6 @@ Imports:
     RUVSeq,
     Rsamtools,
     S4Vectors,
-    stats
+    stats,
+    TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+    airway

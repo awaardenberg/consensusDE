@@ -81,6 +81,7 @@
 #' @importFrom EDASeq betweenLaneNormalization
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
+#' @import airway
 
 multi.de.pairs <- function(summarised = NULL,
                            paired = "unpaired",
