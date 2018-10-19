@@ -4,62 +4,62 @@
 \alias{buildSummarized}
 \title{Generate summarized Read File for DE analyses}
 \usage{
-buildSummarized(sample.table = NULL, bam.dir = NULL, gtf = NULL,
-  tx.db = NULL, mapping.mode = "Union", read.format = NULL,
-  ignore.strand = FALSE, fragments = TRUE, summarized = NULL,
-  output.log = NULL, filter = FALSE,
-  BamFileList.yiedsize = NA_integer_, n.cores = 1, verbose = FALSE)
+buildSummarized(sample_table = NULL, bam_dir = NULL, gtf = NULL,
+  tx_db = NULL, mapping_mode = "Union", read_format = NULL,
+  ignore_strand = FALSE, fragments = TRUE, summarized = NULL,
+  output_log = NULL, filter = FALSE,
+  BamFileList_yiedsize = NA_integer_, n_cores = 1, verbose = FALSE)
 }
 \arguments{
-\item{sample.table}{A data.frame describing samples. For paired mode it must
+\item{sample_table}{A data.frame describing samples. For paired mode it must
 contain 3 columns, with the names "file", "group" and "pairs". The filename
-is the name in the directory supplied with the "bam.dir" parameter below.
+is the name in the directory supplied with the "bam_dir" parameter below.
 This is not required if an existing summarized file is provided. Default=NULL}
 
-\item{bam.dir}{Full path to location of bam files listed in the "file" column
-in the sample.table provided above. This is not required if an existing
+\item{bam_dir}{Full path to location of bam files listed in the "file" column
+in the sample_table provided above. This is not required if an existing
 summarized file is provided. Default=NULL}
 
 \item{gtf}{Full path to a gtf file describing the transcript coordinates to
 map the RNA-seq reads to. GTF file is not required if providing a
 pre-computed summarized experiment file previously generated using
-buildSummarized() OR a tx.db object (below). Default = NULL}
+buildSummarized() OR a tx_db object (below). Default = NULL}
 
-\item{tx.db}{An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
+\item{tx_db}{An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 Default=NULL}
 
-\item{mapping.mode}{Options are "Union", "IntersectionStrict" and
+\item{mapping_mode}{Options are "Union", "IntersectionStrict" and
 "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 Default = "Union"}
 
-\item{read.format}{Are the reads from single-end or paired-end data? Option
+\item{read_format}{Are the reads from single-end or paired-end data? Option
 are "paired" or "single". An option must be selected. Default = NULL}
 
-\item{ignore.strand}{Ignore strand when mapping reads? see "ignore.strand" in
+\item{ignore_strand}{Ignore strand when mapping reads? see "ignore_strand" in
 ?summarizeOverlaps for explanation. Default=FALSE}
 
-\item{fragments}{When mapping.mode="paired", include reads from pairs that do
+\item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
  for explanation. Default=TRUE}
 
 \item{summarized}{Full path to a summarized experiment file. If
 buildSummarized() has already been performed, the output summarized file,
-saved in "/output.log/se.R" can be used as the input (e.g. if filtering is to
+saved in "/output_log/se.R" can be used as the input (e.g. if filtering is to
  be done). Default=NULL}
 
-\item{output.log}{Full path to directory for output of log files and saved
+\item{output_log}{Full path to directory for output of log files and saved
 summarized experiment generated.}
 
 \item{filter}{Perform filtering of low count and missing data from the
 summarized experiment file? This uses default filtering via "filterByExpr".
 See ?filterByExpr for further information. Default=FALSE}
 
-\item{BamFileList.yiedsize}{If running into memory problems. Set the number
+\item{BamFileList_yiedsize}{If running into memory problems. Set the number
 of lines to an integer value. See "yieldSize" description in ?BamFileList for
  an explanation.}
 
-\item{n.cores}{Number of cores to utilise for reading in Bam files. Use with
-caution as can create memory issues if BamFileList.yiedsize is not
+\item{n_cores}{Number of cores to utilise for reading in Bam files. Use with
+caution as can create memory issues if BamFileList_yiedsize is not
 parameterised. Default=1}
 
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
@@ -76,13 +76,13 @@ minimised parameter for first pass batch RNA-seq analyses.
 }
 \examples{
 ## Extract summarized following example in the vignette
-## load annotation tx.db for mapping reads
+## load annotation tx_db for mapping reads
 cat("The examples below will return a summarized experiment")
 
 library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 
 ## build a design table that lists the files and their grouping
-file.list <- list.files(system.file("extdata", package="GenomicAlignments"),
+file_list <- list.files(system.file("extdata", package="GenomicAlignments"),
                         recursive = TRUE,
                         pattern = "*bam$",
                         full = TRUE)
@@ -90,15 +90,15 @@ file.list <- list.files(system.file("extdata", package="GenomicAlignments"),
 ## create a sample table to be used with buildSummarized()
 ## must be comprised of a minimum of two columns, named "file" and "group",
 ## with one additional column: "pairing" if the data is paired
-sample.table <- data.frame("file" = basename(file.list),
+sample_table <- data.frame("file" = basename(file_list),
                            "group" = c("treat", "untreat"))
 
 # extract the path to the bam directory - where to search for files listed in
-## "sample.table"
-bam.dir <- as.character(gsub(basename(file.list)[1], "", file.list[1]))
-summarized.dm3 <- buildSummarized(sample.table = sample.table,
-                                  bam.dir = bam.dir,
-                                  tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-                                  read.format = "paired")
+## "sample_table"
+bam_dir <- as.character(gsub(basename(file_list)[1], "", file_list[1]))
+summarized_dm3 <- buildSummarized(sample_table = sample_table,
+                                  bam_dir = bam_dir,
+                                  tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
+                                  read_format = "paired")
 
 }
