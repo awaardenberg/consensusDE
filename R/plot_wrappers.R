@@ -13,7 +13,7 @@
 #'  examples.
 #
 #' @param se.in A "SeqExpressionSet" object or "RangedSummarizedExperiment"
-#' generated using "read.summarised()". If the input is a "SeqExpressionSet",
+#' generated using "buildSummarized()". If the input is a "SeqExpressionSet",
 #' ensure that it included groups to be analysed. E.g. accessible as
 #' "se.in$group. Groupings are used to automate colouring of samples in
 #' unsupervised analyses. Default = NULL
@@ -93,7 +93,7 @@
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
 #' ## Filter low count data:
-#' airway.filter <- read.summarised(summarised = airway,
+#' airway.filter <- buildSummarized(summarized = airway,
 #'                                  filter = TRUE)
 #' ## Below we will perform a PCA plot
 #' ## see vignette for more details of displaying each plot
@@ -146,7 +146,7 @@ if(!is.null(se.in) && se.in@class == "RangedSummarizedExperiment"){
     }
 
 if(!is.null(se.in) && se.in@class != "SeqExpressionSet")
-  stop(paste("Summarised file provided is not a SeqExpressionSet.", "\n",
+  stop(paste("summarized file provided is not a SeqExpressionSet.", "\n",
               "Please produce a SeqExpressionSet.", "\n", sep=""))
 
 if(!is.null(merged.in) && !inherits(merged.in, "list"))

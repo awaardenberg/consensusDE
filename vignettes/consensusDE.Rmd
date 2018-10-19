@@ -33,11 +33,11 @@ knitr::opts_chunk$set(
   data("airway"),
   colData(airway)$group <- colData(airway)$dex,
   colData(airway)$file <- rownames(colData(airway)),
-  airway.filter <- read.summarised(summarised = airway,
+  airway.filter <- buildSummarized(summarized = airway,
                                    filter = TRUE),
   set.seed(1234),
   airway.filter <- sample(airway.filter, 5000),
-  all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+  all.pairs.airway <- multi.de.pairs(summarized = airway.filter,
                                      ruv.correct = FALSE,
                                      paired = "unpaired"),
   comparison <- all.pairs.airway$merged[["untrt-trt"]],
@@ -54,7 +54,7 @@ consensusDE aims to make first pass differential expression (DE) analysis, with 
 
 Core functionality is simplified into two function:
 
-+ **```read.summarised()```** generate a summarised experiment that counts reads mapped (from bam files) against a transcriptome
++ **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files) against a transcriptome
 + **```multi.de.pairs()```** perform DE analysis (all possible pairwise comparisons)
 
 Below, we demonstrate the core functionality of consensusDE as well as how to plot results from obtained results using the diag.plots() function.
@@ -74,9 +74,9 @@ library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 data("airway")
 ```
 
-# Building a summarised experiment
+# Building a summarized experiment
 
-A summarised experiment is an object format that stores all the relevant information for performing differential expression analysis. ```read.summarised()``` allows users to build a summarised object by simply providing 1) a table of bam files (more below on format), 2) a directory of where to locate the bam files and 3) a transcript database to map the reads to (either a gtf file or txdb). We will use bam files attached to this package (from GenomicAlignments) as an example:
+A summarized experiment is an object format that stores all the relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized object by simply providing 1) a table of bam files (more below on format), 2) a directory of where to locate the bam files and 3) a transcript database to map the reads to (either a gtf file or txdb). We will use bam files attached to this package (from GenomicAlignments) as an example:
 
 ```{r eval=FALSE}
 # build a design table that lists the files and their grouping
@@ -85,7 +85,7 @@ file.list <- list.files(system.file("extdata", package="GenomicAlignments"),
                         pattern = "*bam$", 
                         full = TRUE)
 
-# Prepare a sample table to be used with read.summarised()
+# Prepare a sample table to be used with buildSummarized()
 # must be comprised of a minimum of two columns, named "file" and "group", with one additional column: "pairing" if the data is paired
 sample.table <- data.frame("file" = basename(file.list),
                            "group" = c("treat", "untreat"))
@@ -95,20 +95,20 @@ bam.dir <- as.character(gsub(basename(file.list)[1], "", file.list[1]))
 
 ```
 
-The minimum information is now ready to build a summarised experiment as follows:
+The minimum information is now ready to build a summarized experiment as follows:
 
 ```{r eval=FALSE}
-summarised.dm3 <- read.summarised(sample.table = sample.table,
+summarized.dm3 <- buildSummarized(sample.table = sample.table,
                                   bam.dir = bam.dir,
                                   tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
                                   read.format = "paired")
 ```
 
-This will output a summarised object that has mapped the reads for the bam files that are listed in ```sample.table```, located in ```bam.dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read.format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, using the ```gtf``` parameter. To save the summarised experiment externally, for future use, specify the path to save the summarised experiment using ```output.log``` To see details of all parameters see ```?read.summarised```.
+This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample.table```, located in ```bam.dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read.format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, using the ```gtf``` parameter. To save the summarized experiment externally, for future use, specify the path to save the summarized experiment using ```output.log``` To see details of all parameters see ```?buildSummarized```.
 
-Overview of the summarised experiment:
+Overview of the summarized experiment:
 ```{r eval=FALSE}
-summarised.dm3
+summarized.dm3
 
 # class: RangedSummarizedExperiment 
 # dim: 15682 2 
@@ -122,11 +122,11 @@ summarised.dm3
 
 ## Filtering low count data
 
-```read.summarised()``` also allows users to filter out low read counts. This can be done when building the summarised experiment, or re-running with the summarised experiment output using ```read.summarised()```. See "Performing Differential Expresssion" below with filter example.
+```buildSummarized()``` also allows users to filter out low read counts. This can be done when building the summarized experiment, or re-running with the summarized experiment output using ```buildSummarized()```. See "Performing Differential Expresssion" below with filter example.
 
 # Performing Differential Expresssion
 
-For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarised meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
+For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarized meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
 
 ```{r eval=FALSE}
 # for compatability, add "group" and "file" columns
@@ -134,7 +134,7 @@ colData(airway)$group <- colData(airway)$dex
 colData(airway)$file <- rownames(colData(airway))
 
 # filter low count data
-airway.filter <- read.summarised(summarised = airway,
+airway.filter <- buildSummarized(summarized = airway,
                                  filter = TRUE)
 
 # for illustration, we only use sa random sample of 1000 transcripts
@@ -142,7 +142,7 @@ set.seed(1234)
 airway.filter <- sample(airway.filter, 1000)
 
 # call multi.de.pairs()
-all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+all.pairs.airway <- multi.de.pairs(summarized = airway.filter,
                                    paired = "unpaired",
                                    ruv.correct = FALSE)
 
@@ -177,17 +177,17 @@ It is often useful to add additional annotated information to the output tables.
 
 # Removing unwanted variation (RUV)
 
-consensusDE also provides the option to remove batch effects through RUVseq functionality. consensusDE currently implements RUVr which models a first pass generalised linear model (GLM) using EdgeR and obtaining residuals for incorporation into the SummarizedExperiment object for inclusion in the models for DE analysis. The following example, uses RUV to identify these residuals. To view the residuals in the model see the resisuals section below in the plotting functions. Note, that if ```ruv.correct = TRUE``` and a path to a ```plot.dir``` is provided, diagnostic plots before and after RUV correction will be produced. The residuals can also be accessed in the SummarisedExperiment as below. These are present in the "W_1" column. At present only one factor of variation is determined.
+consensusDE also provides the option to remove batch effects through RUVseq functionality. consensusDE currently implements RUVr which models a first pass generalised linear model (GLM) using EdgeR and obtaining residuals for incorporation into the SummarizedExperiment object for inclusion in the models for DE analysis. The following example, uses RUV to identify these residuals. To view the residuals in the model see the resisuals section below in the plotting functions. Note, that if ```ruv.correct = TRUE``` and a path to a ```plot.dir``` is provided, diagnostic plots before and after RUV correction will be produced. The residuals can also be accessed in the summarizedExperiment as below. These are present in the "W_1" column. At present only one factor of variation is determined.
 
 ```{r eval=FALSE}
 
 # call multi.de.pairs()
-all.pairs.airway.ruv <- multi.de.pairs(summarised = airway.filter,
+all.pairs.airway.ruv <- multi.de.pairs(summarized = airway.filter,
                                        paired = "unpaired",
                                        ruv.correct = TRUE)
 
-# access the summarised experiment (now including the residuals under the "W_1" column)
-colData(all.pairs.airway.ruv$summarised)
+# access the summarized experiment (now including the residuals under the "W_1" column)
+colData(all.pairs.airway.ruv$summarized)
 
 # DataFrame with 8 rows and 3 columns
 #                  file    group                 W_1
@@ -210,7 +210,7 @@ In addition, each of the 10 plots can be plotted individually using the ```diag.
 
 ## Mapped reads
 
-Plot the number of reads that mapped to the transcriptome of each sample. The sample numbers on the x-axis correspond to the sample row number in the SummarisedExperiment built, accessible using ```colData(airway)```. Samples are coloured by their "group".
+Plot the number of reads that mapped to the transcriptome of each sample. The sample numbers on the x-axis correspond to the sample row number in the summarizedExperiment built, accessible using ```colData(airway)```. Samples are coloured by their "group".
 
 ```{r echo=TRUE, message=FALSE}
 diag.plots(se.in = airway.filter,
@@ -239,7 +239,7 @@ diag.plots(se.in = airway.filter,
 Residuals for the RUV model can be plotted as follows:
 
 ```{r eval=FALSE}
-diag.plots(se.in = all.pairs.airway$summarised,
+diag.plots(se.in = all.pairs.airway$summarized,
            name = "airway example data",
            residuals = TRUE)
 ```

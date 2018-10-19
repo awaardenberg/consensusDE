@@ -4,26 +4,26 @@
 \alias{multi.de.pairs}
 \title{Batch - multiDE analysis of many comparisons}
 \usage{
-multi.de.pairs(summarised = NULL, paired = "unpaired",
+multi.de.pairs(summarized = NULL, paired = "unpaired",
   intercept = NULL, adjust.method = "BH", ruv.correct = FALSE,
   ensembl.annotate = FALSE, tx.db = NULL, plot.dir = NULL,
   output.voom = NULL, output.edger = NULL, output.deseq = NULL,
   output.combined = NULL, verbose = FALSE)
 }
 \arguments{
-\item{summarised}{A "RangedSummarizedExperiment" object with included groups
-to be analysed. For format specifications see ?read.summarised. E.g.
-accessible as "summarised$group". Groups are used to automate colouring of
+\item{summarized}{A "RangedSummarizedExperiment" object with included groups
+to be analysed. For format specifications see ?buildSummarized. E.g.
+accessible as "summarized$group". Groups are used to automate colouring of
 samples in unsupervised analyses. Default = NULL}
 
 \item{paired}{Are the sample paired? If "paired" a paired statistical
 analysis by including factors as pairs described in the "pairs" column of the
 "RangedSummarizedExperiment" object in the model (accessible as
-summarised$pairs). Options are "unpaired" or "paired". Default="unpaired"}
+summarized$pairs). Options are "unpaired" or "paired". Default="unpaired"}
 
 \item{intercept}{Optional ability to set the base term for fitting the model.
 This is not necessary as all pairs are computed automatically. The base
-term, if set, must match the name of group in "summarised$group". Default =
+term, if set, must match the name of group in "summarized$group". Default =
 NULL}
 
 \item{adjust.method}{Method used for multiple comparison adjustment of
@@ -72,7 +72,7 @@ A list of all the comparisons conducted.
 ## See vignette for more details.
 }
 \description{
-Given a summarised experiment generated using read.summarised()
+Given a summarized experiment generated using buildSummarized()
 this function will automatically perform differential expression (DE)
 analysis for all possible groups using 3 different methods 1) EdgeR, 2) Voom
 and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
@@ -81,7 +81,6 @@ and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
 \examples{
 ## Load the example data set and attach - see vignette for more details
 cat("The example below will perfrom DE analysis on all pairs of data")
-\dontrun{
 library(airway)
 data("airway")
 ## Name the groups of the data.
@@ -89,12 +88,12 @@ colData(airway)$group <- colData(airway)$dex
 ## Identify the file locations
 colData(airway)$file <- rownames(colData(airway))
 #' ## Filter low count data:
-airway.filter <- read.summarised(summarised = airway,
+airway.filter <- buildSummarized(summarized = airway,
                                  filter = TRUE)
 ## Run multi.de.pairs() with-out RUV correction
 ## To run with RUV correction, use ruv.correct = TRUE
-all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+all.pairs.airway <- multi.de.pairs(summarized = airway.filter,
                                    ruv.correct = FALSE,
                                    paired = "unpaired")
-}
+
 }

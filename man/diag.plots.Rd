@@ -12,7 +12,7 @@ diag.plots(se.in = NULL, merged.in = NULL, write = FALSE,
 }
 \arguments{
 \item{se.in}{A "SeqExpressionSet" object or "RangedSummarizedExperiment"
-generated using "read.summarised()". If the input is a "SeqExpressionSet",
+generated using "buildSummarized()". If the input is a "SeqExpressionSet",
 ensure that it included groups to be analysed. E.g. accessible as
 "se.in$group. Groupings are used to automate colouring of samples in
 unsupervised analyses. Default = NULL}
@@ -116,7 +116,7 @@ Hierarchical clustering, 6) Densitiy distributions, 7) Boxplots, 8) MA plots,
 \examples{
 ## Load the example data set and attach
 cat("The example below will display a PCA plot before normalisation")
-\dontrun{
+
 library(airway)
 data("airway")
 ## Name the groups of the data.
@@ -124,12 +124,12 @@ colData(airway)$group <- colData(airway)$dex
 ## Identify the file locations
 colData(airway)$file <- rownames(colData(airway))
 ## Filter low count data:
-airway.filter <- read.summarised(summarised = airway,
+airway.filter <- buildSummarized(summarized = airway,
                                  filter = TRUE)
 ## Below we will perform a PCA plot
 ## see vignette for more details of displaying each plot
-diag.plots(se.in = airway.filter,
-          name = "airway example data",
-          pca = TRUE)
-}
+## The following is example code to perform a PCA plot
+## diag.plots(se.in = airway.filter,
+              name = "airway example data",
+              pca = TRUE)
 }

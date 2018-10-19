@@ -1,22 +1,22 @@
 #' Batch - multiDE analysis of many comparisons
 #
-#' @description Given a summarised experiment generated using read.summarised()
+#' @description Given a summarized experiment generated using buildSummarized()
 #' this function will automatically perform differential expression (DE)
 #' analysis for all possible groups using 3 different methods 1) EdgeR, 2) Voom
 #' and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
 #'  plotting options are selected (see ?diag.plots for more details).
 #
-#' @param summarised A "RangedSummarizedExperiment" object with included groups
-#'  to be analysed. For format specifications see ?read.summarised. E.g.
-#'  accessible as "summarised$group". Groups are used to automate colouring of
+#' @param summarized A "RangedSummarizedExperiment" object with included groups
+#'  to be analysed. For format specifications see ?buildSummarized. E.g.
+#'  accessible as "summarized$group". Groups are used to automate colouring of
 #'  samples in unsupervised analyses. Default = NULL
 #' @param paired Are the sample paired? If "paired" a paired statistical
 #' analysis by including factors as pairs described in the "pairs" column of the
 #' "RangedSummarizedExperiment" object in the model (accessible as
-#' summarised$pairs). Options are "unpaired" or "paired". Default="unpaired"
+#' summarized$pairs). Options are "unpaired" or "paired". Default="unpaired"
 #' @param intercept Optional ability to set the base term for fitting the model.
 #'  This is not necessary as all pairs are computed automatically. The base
-#'  term, if set, must match the name of group in "summarised$group". Default =
+#'  term, if set, must match the name of group in "summarized$group". Default =
 #'  NULL
 #' @param adjust.method Method used for multiple comparison adjustment of
 #' p-values. Options are: "holm", "hochberg", "hommel", "bonferroni", "BH",
@@ -60,11 +60,11 @@
 #' ## Identify the file locations
 #' colData(airway)$file <- rownames(colData(airway))
 #' #' ## Filter low count data:
-#' airway.filter <- read.summarised(summarised = airway,
+#' airway.filter <- buildSummarized(summarized = airway,
 #'                                  filter = TRUE)
 #' ## Run multi.de.pairs() with-out RUV correction
 #' ## To run with RUV correction, use ruv.correct = TRUE
-#' all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
+#' all.pairs.airway <- multi.de.pairs(summarized = airway.filter,
 #'                                    ruv.correct = FALSE,
 #'                                    paired = "unpaired")
 #'
@@ -82,7 +82,7 @@
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
 
-multi.de.pairs <- function(summarised = NULL,
+multi.de.pairs <- function(summarized = NULL,
                            paired = "unpaired",
                            intercept = NULL,
                            adjust.method = "BH",
@@ -114,14 +114,14 @@ if(ensembl.annotate == TRUE & is.null(tx.db))
 if((ruv.correct != TRUE) & (ruv.correct != FALSE))
     stop("ruv.correct can only be either \"TRUE\" or \"FALSE\".
          Please specify\n")
-if(is.null(summarised)){
+if(is.null(summarized)){
   if(verbose){
-    cat(paste("# NO summarised experiment provided", "\n", sep=""))
+    cat(paste("# NO summarized experiment provided", "\n", sep=""))
   }
 }
 
 # check the format of the table
-sample.table <- data.frame(colData(summarised))
+sample.table <- data.frame(colData(summarized))
 if(ncol(sample.table)==2 &&
    (colnames(sample.table[1])!="file" ||
     colnames(sample.table[2])!="group" ||
@@ -152,24 +152,24 @@ if(!is.null(plot.dir)){
 
 #########################################################
 # Establish 1) design and 2) contrast matrix
-design <- build.design(se = summarised,
+design <- build.design(se = summarized,
                        pairing = paired,
                        intercept = intercept,
                        ruv = FALSE)
 contrast.matrix <- build.contrast.matrix(design$table, design$design)
 
 # 1. build design.matrix
-design.table <- data.frame("file" = as.character(summarised$file),
-                           "group" = summarised$group)
-design <- stats::model.matrix(~summarised$group)
+design.table <- data.frame("file" = as.character(summarized$file),
+                           "group" = summarized$group)
+design <- stats::model.matrix(~summarized$group)
 #update the names of the matrix:
-colnames(design) <- gsub("summarised\\$group", "", colnames(design))
+colnames(design) <- gsub("summarized\\$group", "", colnames(design))
 colnames(design)[1] <- "Intercept"
 
 # 2. normalise and do QC:
-se.qc <- newSeqExpressionSet(assays(summarised)$counts,
-                            phenoData = data.frame(colData(summarised)),
-                            row.names = colnames(assays(summarised)$counts))
+se.qc <- newSeqExpressionSet(assays(summarized)$counts,
+                            phenoData = data.frame(colData(summarized)),
+                            row.names = colnames(assays(summarized)$counts))
 # plot the reads mapped/counts per sample
 if(plot.this == TRUE){
   if(verbose){
@@ -217,7 +217,7 @@ if(ruv.correct==TRUE){
   }
 
   # determine the intercept from the base file (this is done in design.matrix.R)
-  ruv.se <- ruvr.correct(se = summarised,
+  ruv.se <- ruvr.correct(se = summarized,
                          plot.dir = plot.dir,
                          design = design,
                          pairing = paired,
@@ -244,15 +244,15 @@ if(ruv.correct==TRUE){
 if(verbose){
   cat("# Performing DEseq2 analyses\n")
 }
-deseq.res <- deseq.wrapper(summarised, design, contrast.matrix)
+deseq.res <- deseq.wrapper(summarized, design, contrast.matrix)
 if(verbose){
   cat("# Performing EdgeR analyses\n")
 }
-edger.res <- edger.wrapper(summarised, design, contrast.matrix)
+edger.res <- edger.wrapper(summarized, design, contrast.matrix)
 if(verbose){
   cat("# Performing voom analyses\n")
 }
-voom.res <- voom.wrapper(summarised, design, contrast.matrix)
+voom.res <- voom.wrapper(summarized, design, contrast.matrix)
 
 #########################################################
 # Merge results and report all comparisons done as well
@@ -379,7 +379,7 @@ if(!is.null(output.voom) |
     }
   }
   # invoke write.table.wrapper
-  write.table.wrapper(summarised = summarised,
+  write.table.wrapper(summarized = summarized,
                       merged = list("merged" = merged,
                                     "deseq" = deseq.res,
                                     "edger" = edger.res,
@@ -401,7 +401,7 @@ if(ruv.correct == TRUE){
               "deseq" = deseq.res,
               "edger" = edger.res,
               "voom" = voom.res,
-              "summarised" = ruv.se[[1]]))
+              "summarized" = ruv.se[[1]]))
 }
 
 if(ruv.correct == FALSE){
@@ -409,14 +409,14 @@ if(ruv.correct == FALSE){
               "deseq" = deseq.res,
               "edger" = edger.res,
               "voom" = voom.res,
-              "summarised" = summarised))
+              "summarized" = summarized))
 }
 
 }
 
 # helper function for annotating and writing tables:
 # these are seperate commands for writing tables:
-write.table.wrapper <- function(summarised = NULL,
+write.table.wrapper <- function(summarized = NULL,
                                 merged = NULL,
                                 voom.dir = NULL,
                                 edger.dir = NULL,
@@ -427,23 +427,23 @@ write.table.wrapper <- function(summarised = NULL,
   # check the merged is a list format and check the names! etc.
 #########################################################
 # obtain raw and normalised counts
-raw <- assays(summarised)$counts
-cpm.raw <- cpm(assays(summarised)$counts)
-cpm.raw.log <- cpm(assays(summarised)$counts, log=TRUE)
-cpm.mean <- table.means(cpm.raw, colData(summarised)$group)
-cpm.mean.log <- table.means(cpm.raw.log, colData(summarised)$group)
+raw <- assays(summarized)$counts
+cpm.raw <- cpm(assays(summarized)$counts)
+cpm.raw.log <- cpm(assays(summarized)$counts, log=TRUE)
+cpm.mean <- table.means(cpm.raw, colData(summarized)$group)
+cpm.mean.log <- table.means(cpm.raw.log, colData(summarized)$group)
 
 # to normalise, push into seqexpressionset
-se.new <- newSeqExpressionSet(assays(summarised)$counts,
-                              phenoData = data.frame(colData(summarised)),
-                              row.names=colnames(assays(summarised)$counts))
+se.new <- newSeqExpressionSet(assays(summarized)$counts,
+                              phenoData = data.frame(colData(summarized)),
+                              row.names=colnames(assays(summarized)$counts))
 # normalise for library size
 se.norm <- betweenLaneNormalization(se.new, which="upper")
 norm.count <- normCounts(se.norm)
 cpm.norm <- cpm(normCounts(se.norm))
 cpm.norm.log <- cpm(normCounts(se.norm), log=TRUE)
-cpm.norm.mean <- table.means(cpm.norm, colData(summarised)$group)
-cpm.norm.log.mean <- table.means(cpm.norm.log, colData(summarised)$group)
+cpm.norm.mean <- table.means(cpm.norm, colData(summarized)$group)
+cpm.norm.log.mean <- table.means(cpm.norm.log, colData(summarized)$group)
 
 # directories to print to
 # check exists first!

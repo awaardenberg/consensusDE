@@ -1,6 +1,6 @@
-#' Generate Summarised Read File for DE analyses
+#' Generate summarized Read File for DE analyses
 #
-#' @description This function will create a summarised file, decribing reads
+#' @description This function will create a summarized file, decribing reads
 #' from RNA-seq experiments that overlap a set of transcript features.
 #' Transcript features can be described as a gtf formatted table that is
 #' imported, or using a txdb. This is designed to be straightforward and
@@ -9,14 +9,14 @@
 #' @param sample.table A data.frame describing samples. For paired mode it must
 #' contain 3 columns, with the names "file", "group" and "pairs". The filename
 #' is the name in the directory supplied with the "bam.dir" parameter below.
-#' This is not required if an existing summarised file is provided. Default=NULL
+#' This is not required if an existing summarized file is provided. Default=NULL
 #' @param bam.dir Full path to location of bam files listed in the "file" column
 #'  in the sample.table provided above. This is not required if an existing
-#'  summarised file is provided. Default=NULL
+#'  summarized file is provided. Default=NULL
 #' @param gtf Full path to a gtf file describing the transcript coordinates to
 #' map the RNA-seq reads to. GTF file is not required if providing a
-#' pre-computed summarised experiment file previously generated using
-#' read.summarised() OR a tx.db object (below). Default = NULL
+#' pre-computed summarized experiment file previously generated using
+#' buildSummarized() OR a tx.db object (below). Default = NULL
 #' @param tx.db An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 #' Default=NULL
 #' @param mapping.mode Options are "Union", "IntersectionStrict" and
@@ -29,14 +29,14 @@
 #' @param fragments When mapping.mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default=TRUE
-#' @param summarised Full path to a summarised experiment file. If
-#' read.summarised() has already been performed, the output summarised file,
+#' @param summarized Full path to a summarized experiment file. If
+#' buildSummarized() has already been performed, the output summarized file,
 #' saved in "/output.log/se.R" can be used as the input (e.g. if filtering is to
 #'  be done). Default=NULL
 #' @param output.log Full path to directory for output of log files and saved
-#' summarised experiment generated.
+#' summarized experiment generated.
 #' @param filter Perform filtering of low count and missing data from the
-#' summarised experiment file? This uses default filtering via "filterByExpr".
+#' summarized experiment file? This uses default filtering via "filterByExpr".
 #' See ?filterByExpr for further information. Default=FALSE
 #' @param BamFileList.yiedsize If running into memory problems. Set the number
 #' of lines to an integer value. See "yieldSize" description in ?BamFileList for
@@ -47,9 +47,9 @@
 #' @param verbose Verbosity ON/OFF. Default=FALSE
 #'
 #' @examples
-#' ## Extract summarised following example in the vignette
+#' ## Extract summarized following example in the vignette
 #' ## load annotation tx.db for mapping reads
-#' cat("The examples below will return a summarised experiment")
+#' cat("The examples below will return a summarized experiment")
 #' 
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 #'
@@ -59,7 +59,7 @@
 #'                         pattern = "*bam$",
 #'                         full = TRUE)
 #'
-#' ## create a sample table to be used with read.summarised()
+#' ## create a sample table to be used with buildSummarized()
 #' ## must be comprised of a minimum of two columns, named "file" and "group",
 #' ## with one additional column: "pairing" if the data is paired
 #' sample.table <- data.frame("file" = basename(file.list),
@@ -68,14 +68,14 @@
 #' # extract the path to the bam directory - where to search for files listed in
 #' ## "sample.table"
 #' bam.dir <- as.character(gsub(basename(file.list)[1], "", file.list[1]))
-#' summarised.dm3 <- read.summarised(sample.table = sample.table,
+#' summarized.dm3 <- buildSummarized(sample.table = sample.table,
 #'                                   bam.dir = bam.dir,
 #'                                   tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
 #'                                   read.format = "paired")
 #' 
-#' @return A summarised experiment
+#' @return A summarized experiment
 #'
-#' @export read.summarised
+#' @export buildSummarized
 #'
 #' @importFrom SummarizedExperiment colData colData<-
 #' @importFrom Rsamtools BamFileList
@@ -85,7 +85,7 @@
 #' @importFrom edgeR filterByExpr
 #' @import TxDb.Dmelanogaster.UCSC.dm3.ensGene
 
-read.summarised <- function(sample.table = NULL,
+buildSummarized <- function(sample.table = NULL,
                             bam.dir = NULL,
                             gtf = NULL,
                             tx.db = NULL,
@@ -93,7 +93,7 @@ read.summarised <- function(sample.table = NULL,
                             read.format = NULL,
                             ignore.strand = FALSE,
                             fragments = TRUE,
-                            summarised = NULL,
+                            summarized = NULL,
                             output.log = NULL,
                             filter = FALSE,
                             BamFileList.yiedsize = NA_integer_,
@@ -101,13 +101,13 @@ read.summarised <- function(sample.table = NULL,
                             verbose = FALSE){
 
 ####///---- check inputs ----\\\###
-if(is.null(summarised) & (is.null(read.format)))
+if(is.null(summarized) & (is.null(read.format)))
   stop("read.format must be specified as either \"paired\", or \"single\" if
-       a summarised file has not been generated.")
-if(is.null(summarised) & (!is.null(read.format))){
+       a summarized file has not been generated.")
+if(is.null(summarized) & (!is.null(read.format))){
   if(read.format != "paired" & read.format != "single"){
     stop("read.format must be specified as either \"paired\", or \"single\" if
-       a summarised file has not been generated.")
+       a summarized file has not been generated.")
   }
   # define mode for summarizeOverlaps
   if(read.format == "paired")
@@ -128,14 +128,14 @@ if(!is.wholenumber(n.cores))
   stop("n.cores must be an integer")
   # register the number of cores to used:
   register(MulticoreParam(workers=n.cores))
-if(is.null(bam.dir) & is.null(summarised))
-  stop("A directory to Bam files must be provided when a summarised file is not
+if(is.null(bam.dir) & is.null(summarized))
+  stop("A directory to Bam files must be provided when a summarized file is not
        provided.")
-if(is.null(gtf) & is.null(tx.db) & is.null(summarised))
-  stop("No summarised file is provided and missing a GTF or txdb file. Provide
+if(is.null(gtf) & is.null(tx.db) & is.null(summarized))
+  stop("No summarized file is provided and missing a GTF or txdb file. Provide
         full path to gtf file or a txdb for mapping bam file reads")
-if(is.null(sample.table) & is.null(summarised))
-  stop("No summarised file is provided and missing sample table! Input a sample
+if(is.null(sample.table) & is.null(summarized))
+  stop("No summarized file is provided and missing sample table! Input a sample
         table using sample.table parameter")
 if(is.null(output.log))
   warning("No output directory provided. The se file and sample.table will not
@@ -148,10 +148,10 @@ if(filter != TRUE & is.null(sample.table))
 
 ####///---- input checks DONE ----\\\###
 
-# create a new summarised object and save
-if(is.null(summarised)){
+# create a new summarized object and save
+if(is.null(summarized)){
   if(verbose){
-    cat(paste("# NO summarised experiment provided", "\n", sep=""))
+    cat(paste("# NO summarized experiment provided", "\n", sep=""))
   }
   # check column names exist for sample.table
   if("file" %in% colnames(sample.table) == FALSE){
@@ -182,7 +182,7 @@ if(is.null(summarised)){
   bam_files <- paste(bam.dir, sample.table$file, sep="")
   bamfiles <- BamFileList(bam_files, yieldSize = BamFileList.yiedsize)
   if(verbose){
-    cat(paste("# Building summarised experiment", "\n", sep=""))
+    cat(paste("# Building summarized experiment", "\n", sep=""))
   }
   # this is fine for RNA-seq, as it may be possible that only one of the pairs
   # aligns to the feature of interest due to transcript annotaiton. There is an
@@ -203,7 +203,7 @@ if(is.null(summarised)){
   if(!is.null(output.log)){
     save(se, file=paste(output.log, "se.R", sep=""))
     if(verbose){
-      cat(paste("# Summarised experiment saved to:", "\n",
+      cat(paste("# summarized experiment saved to:", "\n",
                 "# ", output.log, "se.R", sep=""))
     }
   }
@@ -211,35 +211,35 @@ se.out <- se
 }
 
 # if a .se file [or] path to se.R is provided as an input
-if(!is.null(summarised)){
-  # either a summarised file already in R, OR read the file in
-  if(is.character(summarised)==TRUE){
+if(!is.null(summarized)){
+  # either a summarized file already in R, OR read the file in
+  if(is.character(summarized)==TRUE){
     # mask any existing environment variables
-    attach(summarised, name = "summarised")
+    attach(summarized, name = "summarized")
     if(verbose){
-      cat(paste("# Summarised experiment has been loaded from:", "\n",
-                "# ", summarised, "\n", sep=""))
+      cat(paste("# summarized experiment has been loaded from:", "\n",
+                "# ", summarized, "\n", sep=""))
     }
     if(!exists("se"))
-      stop(paste("Summarised file provided has not been generated", "\n",
-                 "with consensusDE. Please produce a summarised", "\n",
-                 "experiment with consensusDE using read.summarised()", "\n",
+      stop(paste("summarized file provided has not been generated", "\n",
+                 "with consensusDE. Please produce a summarized", "\n",
+                 "experiment with consensusDE using buildSummarized()", "\n",
                  sep=""))
     se.out <- se
     # now detach the file to clean-up the workspace
-    detach(summarised)
+    detach(summarized)
     # check the file format
     if(se.out@class != "RangedSummarizedExperiment")
-      stop(paste("Summarised file provided is not a RangedSummarizedExperiment,
+      stop(paste("summarized file provided is not a RangedSummarizedExperiment,
                   Please produce a RangedSummarizedExperiment.", "\n",
                   sep=""))
   }
-  # if already a summarised file
-  if(is.character(summarised)==FALSE && summarised@class ==
+  # if already a summarized file
+  if(is.character(summarized)==FALSE && summarized@class ==
      "RangedSummarizedExperiment"){
-    se.out <- summarised
+    se.out <- summarized
     if(verbose){
-      cat(paste("# Summarised experiment provided is as follows:", "\n",
+      cat(paste("# summarized experiment provided is as follows:", "\n",
                 sep=""))
       print(se.out)
     }
@@ -249,15 +249,15 @@ if(!is.null(summarised)){
   # check the format of the table:
   # check column names exist for sample.table
   if("file" %in% colnames(sample.table) == FALSE){
-    warning("The summarised experiment provided does not include a \"file\"
+    warning("The summarized experiment provided does not include a \"file\"
             column. This will create errors when running the DE analysis. Update
-            the summarised experiment with the experimental details before
+            the summarized experiment with the experimental details before
             processing to DE analysis")
   }
   if("group" %in% colnames(sample.table) == FALSE){
-    warning("The summarised experiment provided does not include a \"group\"
+    warning("The summarized experiment provided does not include a \"group\"
              column. This will create errors when running the DE analysis.
-             Update the summarised experiment with the experimental details
+             Update the summarized experiment with the experimental details
              before processing to DE analysis")
   }
 
@@ -265,7 +265,7 @@ if(!is.null(summarised)){
     se <- se.out
     save(se, file=paste(output.log, "se.R", sep=""))
     if(verbose){
-      cat(paste("# Summarised experiment saved to:", "\n",
+      cat(paste("# summarized experiment saved to:", "\n",
                 "# ", output.log, "se.R", sep=""))
     }
   }
@@ -295,7 +295,7 @@ if(filter == TRUE){
   se.out <- se.out[rownames(se.out)[keep] ,]
 }
   if(verbose){
-    cat("# SummarisedFile ready for further analysis\n")
+    cat("# summarizedFile ready for further analysis\n")
   }
 return(se.out)
 }
