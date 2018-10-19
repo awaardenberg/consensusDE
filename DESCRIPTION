@@ -1,7 +1,7 @@
 Package: consensusDE
 Type: Package
 Title: An extensible package for RNA-seq analysis using multiple algorithms 
-Version: 0.99.6
+Version: 0.99.7
 Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform automatic DE analysis. It 
@@ -19,8 +19,7 @@ VignetteBuilder: knitr
 biocViews: 
     Transcriptomics,
     MultipleComparison, 
-    Clustering,
-    GeneExpressionWorkflow
+    Clustering
 Depends: 
     R (>= 3.5)
 Imports:
