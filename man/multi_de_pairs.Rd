@@ -80,7 +80,7 @@ and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
 }
 \examples{
 ## Load the example data set and attach - see vignette for more details
-cat("The example below will perfrom DE analysis on all pairs of data")
+## The example below will perfrom DE analysis on all pairs of data
 library(airway)
 data("airway")
 ## Name the groups of the data.

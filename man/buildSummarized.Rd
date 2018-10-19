@@ -77,7 +77,7 @@ minimised parameter for first pass batch RNA-seq analyses.
 \examples{
 ## Extract summarized following example in the vignette
 ## load annotation tx_db for mapping reads
-cat("The examples below will return a summarized experiment")
+## The examples below will return a summarized experiment
 
 library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 

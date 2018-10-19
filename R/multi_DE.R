@@ -52,7 +52,7 @@
 #'
 #' @examples
 #' ## Load the example data set and attach - see vignette for more details
-#' cat("The example below will perfrom DE analysis on all pairs of data")
+#' ## The example below will perfrom DE analysis on all pairs of data
 #' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
@@ -106,7 +106,7 @@ if((adjust_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
 }
 
 if(is.null(plot_dir) && verbose == TRUE)
-  cat("No output directory provided for plots. Plots will not be generated\n")
+  message("No output directory provided for plots. Plots will not be generated")
 
 if(ensembl_annotate == TRUE & is.null(tx_db))
   warning("ensembl_annotate was set to TRUE, but no tx_db detected. Continuing
@@ -116,7 +116,7 @@ if((ruv_correct != TRUE) & (ruv_correct != FALSE))
          Please specify\n")
 if(is.null(summarized)){
   if(verbose){
-    cat(paste("# NO summarized experiment provided", "\n", sep=""))
+    message("# NO summarized experiment provided")
   }
 }
 
@@ -173,8 +173,7 @@ se_qc <- newSeqExpressionSet(assays(summarized)$counts,
 # plot the reads mapped/counts per sample
 if(plot_this == TRUE){
   if(verbose){
-    cat(paste("# Plotting Mapped Read counts. Will be located here: ", plot_dir,
-              "\n", sep=""))
+    message("# Plotting Mapped Read counts. Will be located here: ", plot_dir)
   }
   invisible(diag_plots(se_in = se_qc,
                        write = write_this,
@@ -187,8 +186,7 @@ se_qc_norm <- betweenLaneNormalization(se_qc, which="upper")
 # output diagnostic plots:
 if(plot_this == TRUE){
   if(verbose){
-    cat(paste("# Plotting Dignostic plot. Will be located here: ", plot_dir,
-              "\n", sep=""))
+    message("# Plotting Dignostic plot. Will be located here: ", plot_dir)
   }
   invisible(diag_plots(se_in = se_qc,
                        write = write_this,
@@ -213,7 +211,7 @@ if(plot_this == TRUE){
 # this will basically update the design matrix and contrast matrix
 if(ruv_correct==TRUE){
   if(verbose){
-    cat("# [OPTIONS] RUV batch correction has been selected")
+    message("# [OPTIONS] RUV batch correction has been selected")
   }
 
   # determine the intercept from the base file
@@ -242,15 +240,15 @@ if(ruv_correct==TRUE){
 # will run against all three:
 # add verbose
 if(verbose){
-  cat("# Performing DEseq2 analyses\n")
+  message("# Performing DEseq2 analyses")
 }
 deseq_res <- deseq_wrapper(summarized, design, contrast_matrix)
 if(verbose){
-  cat("# Performing EdgeR analyses\n")
+  message("# Performing EdgeR analyses")
 }
 edger_res <- edger_wrapper(summarized, design, contrast_matrix)
 if(verbose){
-  cat("# Performing voom analyses\n")
+  message("# Performing voom analyses")
 }
 voom_res <- voom_wrapper(summarized, design, contrast_matrix)
 
@@ -284,7 +282,7 @@ set_length <- max(length(voom_res$short_results),
 # i.e. what the output is anchored on, here it is edger.
 # NB: average expr. is over all conditions.
 if(verbose){
-  cat("# Creating merged/consensus results for edgeR, DEseq2 and Voom\n")
+  message("# Creating merged/consensus results for edgeR, DEseq2 and Voom")
 }
 merged <- lapply(seq_len(set_length), function(i)
   merge_results(x = edger_res$short_results[[i]],
@@ -298,7 +296,7 @@ merged <- lapply(seq_len(set_length), function(i)
 
 if(ensembl_annotate==TRUE & !is.null(tx_db)){
   if(verbose){
-    cat("# Annotating results\n")
+    message("# Annotating results")
   }
     merged <- lapply(seq_len(length(merged)), function(i)
                      annotate_ensembl(merged[[i]], merged[[i]]$ID,
@@ -308,8 +306,8 @@ names(merged) <- names(deseq_res$short_results)
 
 if(plot_this == TRUE){
   if(verbose){
-    cat(paste("# Plotting Dignostic plots for Merged Data.
-              Will be located here: ", plot_dir, "\n", sep=""))
+    message("# Plotting Dignostic plots for Merged Data. 
+               Will be located here: ", plot_dir)
   }
 
   # select and change the column names (for compatability with diag_plots())
@@ -323,8 +321,7 @@ if(plot_this == TRUE){
 
   # This is where to run the additional plots for each of the comparisons
   if(verbose){
-    cat(paste("# Producing MA plots. Will be located here: ", plot_dir, "\n",
-              sep=""))
+    message("# Producing MA plots. Will be located here: ", plot_dir)
   }
   invisible(diag_plots(se_in = NULL,
                        write = write_this,
@@ -333,8 +330,7 @@ if(plot_this == TRUE){
                        merged_in = merged_plots,
                        name = "MA_plots"))
   if(verbose){
-    cat(paste("# Producing Volcano plots. Will be located here: ", plot_dir,
-              "\n", sep=""))
+    message("# Producing Volcano plots. Will be located here: ", plot_dir)
   }
   invisible(diag_plots(se_in = NULL,
                        write = write_this,
@@ -343,8 +339,8 @@ if(plot_this == TRUE){
                        merged_in = merged_plots,
                        name = "Volcano_plots"))
   if(verbose){
-    cat(paste("# Producing p-value distribution plots. Will be located here: ",
-              plot_dir, "\n", sep=""))
+    message("# Producing p-value distribution plots. 
+               Will be located here: ", plot_dir)
   }
   invisible(diag_plots(se_in = NULL,
                        write = write_this,
@@ -360,22 +356,18 @@ if(!is.null(output_voom) |
    !is.null(output_combined)){
 
   if(verbose){
-    cat(paste("# Writing all DE tables: ", "\n", sep=""))
+    message("# Writing all DE tables.")
     if(!is.null(output_voom)){
-      cat(paste("# Writing Voom DE tables to: ", output_voom, "\n",
-                sep=""))
+      message("# Writing Voom DE tables to: ", output_voom)
     }
     if(!is.null(output_edger)){
-      cat(paste("# Writing EdgeR DE tables to: ", output_edger, "\n",
-                sep=""))
+      messagee("# Writing EdgeR DE tables to: ", output_edger)
     }
     if(!is.null(output_deseq)){
-      cat(paste("# Writing DEseq2 DE tables to: ", output_deseq, "\n",
-                sep=""))
+      message("# Writing DEseq2 DE tables to: ", output_deseq)
     }
     if(!is.null(output_combined)){
-      cat(paste("# Writing merged DE tables to: ", output_combined, "\n",
-                sep=""))
+      message("# Writing merged DE tables to: ", output_combined)
     }
   }
   # invoke write_table_wrapper
@@ -391,7 +383,7 @@ if(!is.null(output_voom) |
 }
 
 if(verbose){
-  cat(paste("# Finished DE analysis: ", "\n", sep=""))
+  message("# Finished DE analysis")
 }
 
 # returns the merged results of the 3 comparisons.
@@ -536,16 +528,16 @@ return(data_out)
 # not used from version 0.05
 intersect_test <- function(x=NULL, y=NULL, z=NULL){
     if(!is.null(x) & !is.null(y)){
-        cat(paste("# set1 = ", length(x), "\n"))
-        cat(paste("# set2 = ", length(y), "\n"))
+        message("# set1 = ", length(x))
+        message("# set2 = ", length(y))
         common <- intersect(x, y)
     }
     if(!is.null(x) & !is.null(y) & !is.null(z)){
-        cat(paste("# set3 = ", length(z), "\n"))
+        message("# set3 = ", length(z))
         common <- intersect(common, z)
     }
-    cat(paste("# intersect = ", length(common), "\n"))
-    return(common)
+    message("# intersect = ", length(common))
+return(common)
 }
 
 # function for obtaining non-de rows from the outputs of the XX$short_results
@@ -863,8 +855,8 @@ ruvr_correct <- function(se = NULL,
     # output RLE and PCA plots
     if(plot_this == TRUE){
         if(verbose){
-            cat(paste("# Plotting RUV Dignostic plots. Will be located here: ",
-                      plot_dir, "\n", sep=""))
+          message("# Plotting RUV Dignostic plots. 
+                     Will be located here:", plot_dir)
         }
 
         invisible(diag_plots(se_in = ruv_se,

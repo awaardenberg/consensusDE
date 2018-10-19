@@ -115,7 +115,7 @@ Hierarchical clustering, 6) Densitiy distributions, 7) Boxplots, 8) MA plots,
 }
 \examples{
 ## Load the example data set and attach
-cat("The example below will display a PCA plot before normalisation")
+## The example below will display a PCA plot before normalisation
 
 library(airway)
 data("airway")

@@ -49,7 +49,7 @@
 #' @examples
 #' ## Extract summarized following example in the vignette
 #' ## load annotation tx_db for mapping reads
-#' cat("The examples below will return a summarized experiment")
+#' ## The examples below will return a summarized experiment
 #' 
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 #'
@@ -151,7 +151,7 @@ if(filter != TRUE & is.null(sample_table))
 # create a new summarized object and save
 if(is.null(summarized)){
   if(verbose){
-    cat(paste("# NO summarized experiment provided", "\n", sep=""))
+    message("# NO summarized experiment provided")
   }
   # check column names exist for sample_table
   if("file" %in% colnames(sample_table) == FALSE){
@@ -182,7 +182,7 @@ if(is.null(summarized)){
   bam_files <- paste(bam_dir, sample_table$file, sep="")
   bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
   if(verbose){
-    cat(paste("# Building summarized experiment", "\n", sep=""))
+    message("# Building summarized experiment")
   }
   # this is fine for RNA-seq, as it may be possible that only one of the pairs
   # aligns to the feature of interest due to transcript annotaiton. There is an
@@ -203,8 +203,8 @@ if(is.null(summarized)){
   if(!is.null(output_log)){
     save(se, file=paste(output_log, "se.R", sep=""))
     if(verbose){
-      cat(paste("# summarized experiment saved to:", "\n",
-                "# ", output_log, "se.R", sep=""))
+      message("# summarized experiment saved to:", 
+              paste(output_log, "se.R", sep=""))
     }
   }
 se_out <- se
@@ -217,8 +217,7 @@ if(!is.null(summarized)){
     # mask any existing environment variables
     attach(summarized, name = "summarized")
     if(verbose){
-      cat(paste("# summarized experiment has been loaded from:", "\n",
-                "# ", summarized, "\n", sep=""))
+      message("# summarized experiment has been loaded from:", summarized)
     }
     if(!exists("se"))
       stop(paste("summarized file provided has not been generated", "\n",
@@ -239,9 +238,8 @@ if(!is.null(summarized)){
      "RangedSummarizedExperiment"){
     se_out <- summarized
     if(verbose){
-      cat(paste("# summarized experiment provided is as follows:", "\n",
-                sep=""))
-      print(se_out)
+      message("# summarized experiment provided is as follows:")
+      message(se_out)
     }
   }
 
@@ -265,16 +263,16 @@ if(!is.null(summarized)){
     se <- se_out
     save(se, file=paste(output_log, "se.R", sep=""))
     if(verbose){
-      cat(paste("# summarized experiment saved to:", "\n",
-                "# ", output_log, "se.R", sep=""))
+      message("# summarized experiment saved to:", 
+              paste(output_log, "se.R", sep=""))
     }
   }
 }
 
 # report table and number of bam files (either from input, or from se file)
 if(verbose){
-  print(sample_table)
-  cat(paste("\n", "#", nrow(sample_table), "bam file[s] selected\n\n", sep=" "))
+  message(sample_table)
+  message("#", nrow(sample_table), "bam file[s] selected")
 }
 
 # option to write sample_table to log dir
@@ -283,8 +281,8 @@ if(!is.null(output_log)){
                                               "sample_table_input.tsv", sep=""),
               sep="\t", row.names=FALSE, quote=FALSE)
   if(verbose){
-    cat(paste("# sample table saved to:", "\n",
-              "# ", output_log, "sample_table_input.tsv", "\n", sep=""))
+    message("# sample table saved to:", 
+            paste(output_log, "sample_table_input.tsv", sep=""))
   }
 }
 
@@ -295,7 +293,7 @@ if(filter == TRUE){
   se_out <- se_out[rownames(se_out)[keep] ,]
 }
   if(verbose){
-    cat("# summarizedFile ready for further analysis\n")
+    message("# summarizedFile ready for further analysis")
   }
 return(se_out)
 }
