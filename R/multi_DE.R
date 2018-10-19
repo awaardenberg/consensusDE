@@ -53,7 +53,6 @@
 #' @examples
 #' ## Load the example data set and attach - see vignette for more details
 #' cat("The example below will perfrom DE analysis on all pairs of data")
-#' \dontrun{
 #' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
@@ -68,7 +67,7 @@
 #' all.pairs.airway <- multi.de.pairs(summarised = airway.filter,
 #'                                    ruv.correct = FALSE,
 #'                                    paired = "unpaired")
-#' }
+#'
 #' @return A list of all the comparisons conducted.
 #' ## See vignette for more details.
 #'

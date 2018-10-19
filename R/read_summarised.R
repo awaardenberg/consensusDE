@@ -50,7 +50,7 @@
 #' ## Extract summarised following example in the vignette
 #' ## load annotation tx.db for mapping reads
 #' cat("The examples below will return a summarised experiment")
-#' \dontrun{
+#' 
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 #'
 #' ## build a design table that lists the files and their grouping
@@ -72,7 +72,7 @@
 #'                                   bam.dir = bam.dir,
 #'                                   tx.db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
 #'                                   read.format = "paired")
-#' }
+#' 
 #' @return A summarised experiment
 #'
 #' @export read.summarised

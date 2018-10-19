@@ -85,7 +85,7 @@
 #' @examples
 #' ## Load the example data set and attach
 #' cat("The example below will display a PCA plot before normalisation")
-#' \dontrun{
+#'
 #' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
@@ -97,10 +97,11 @@
 #'                                  filter = TRUE)
 #' ## Below we will perform a PCA plot
 #' ## see vignette for more details of displaying each plot
-#'diag.plots(se.in = airway.filter,
-#'           name = "airway example data",
-#'           pca = TRUE)
-#' }
+#' ## The following is example code to perform a PCA plot
+#' ## diag.plots(se.in = airway.filter,
+#'               name = "airway example data",
+#'               pca = TRUE)
+#
 #' @return Returns pretty plots.
 #'
 #' @export diag.plots
