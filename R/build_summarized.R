@@ -48,26 +48,25 @@
 #'
 #' @examples
 #' ## Extract summarized following example in the vignette
-#' ## load annotation tx_db for mapping reads
-#' ## The examples below will return a summarized experiment
-#' 
+#' ## The example below will return a summarized experiment
+#' ## tx.db is obtained from TxDb.Dmelanogaster.UCSC.dm3.ensGene library
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
-#'
-#' ## build a design table that lists the files and their grouping
+#' ## bam files are obtained from the GenomicAlignments package
+#' 
+#' ## 1. Build a sample table that lists files and groupings
+#' ## - obtain list of files
 #' file_list <- list.files(system.file("extdata", package="GenomicAlignments"),
 #'                         recursive = TRUE,
 #'                         pattern = "*bam$",
 #'                         full = TRUE)
+#' bam_dir <- as.character(gsub(basename(file_list)[1], "", file_list[1]))
 #'
-#' ## create a sample table to be used with buildSummarized()
+#' ## - create a sample table to be used with buildSummarized() below
 #' ## must be comprised of a minimum of two columns, named "file" and "group",
-#' ## with one additional column: "pairing" if the data is paired
 #' sample_table <- data.frame("file" = basename(file_list),
 #'                            "group" = c("treat", "untreat"))
 #'
-#' # extract the path to the bam directory - where to search for files listed in
-#' ## "sample_table"
-#' bam_dir <- as.character(gsub(basename(file_list)[1], "", file_list[1]))
+# ## 2. Build summarized experiment, from sample table and dm3 txdb
 #' summarized_dm3 <- buildSummarized(sample_table = sample_table,
 #'                                   bam_dir = bam_dir,
 #'                                   tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
@@ -84,6 +83,7 @@
 #' @importFrom BiocParallel register MulticoreParam
 #' @importFrom edgeR filterByExpr
 #' @import TxDb.Dmelanogaster.UCSC.dm3.ensGene
+#' @import Biostrings
 
 buildSummarized <- function(sample_table = NULL,
                             bam_dir = NULL,

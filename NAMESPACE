@@ -3,6 +3,7 @@
 export(buildSummarized)
 export(diag_plots)
 export(multi_de_pairs)
+import(Biostrings)
 import(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 import(airway)
 importFrom(AnnotationDbi,mapIds)

@@ -4,7 +4,7 @@
 #' this function will automatically perform differential expression (DE)
 #' analysis for all possible groups using 3 different methods 1) EdgeR, 2) Voom
 #' and 3) DEseq2. It will also output 10x diagnostic plots automatically, if the
-#'  plotting options are selected (see ?diag_plots for more details).
+#' plotting options are selected (see ?diag_plots for more details).
 #
 #' @param summarized A "RangedSummarizedExperiment" object with included groups
 #'  to be analysed. For format specifications see ?buildSummarized. E.g.
@@ -53,15 +53,17 @@
 #' @examples
 #' ## Load the example data set and attach - see vignette for more details
 #' ## The example below will perfrom DE analysis on all pairs of data
-#' library(airway)
 #' data("airway")
-#' ## Name the groups of the data.
+#' ## Name groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
-#' ## Identify the file locations
+#' ## Identify file locations
 #' colData(airway)$file <- rownames(colData(airway))
 #' #' ## Filter low count data:
 #' airway_filter <- buildSummarized(summarized = airway,
 #'                                  filter = TRUE)
+#' ## for illustration, we only use random sample of 1000 transcripts
+#' set.seed(1234)
+#' airway_filter <- sample(airway_filter, 1000)
 #' ## Run multi_de_pairs() with-out RUV correction
 #' ## To run with RUV correction, use ruv_correct = TRUE
 #' all_pairs_airway <- multi_de_pairs(summarized = airway_filter,
@@ -361,7 +363,7 @@ if(!is.null(output_voom) |
       message("# Writing Voom DE tables to: ", output_voom)
     }
     if(!is.null(output_edger)){
-      messagee("# Writing EdgeR DE tables to: ", output_edger)
+      message("# Writing EdgeR DE tables to: ", output_edger)
     }
     if(!is.null(output_deseq)){
       message("# Writing DEseq2 DE tables to: ", output_deseq)

@@ -85,8 +85,6 @@
 #' @examples
 #' ## Load the example data set and attach
 #' ## The example below will display a PCA plot before normalisation
-#'
-#' library(airway)
 #' data("airway")
 #' ## Name the groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
@@ -95,9 +93,11 @@
 #' ## Filter low count data:
 #' airway_filter <- buildSummarized(summarized = airway,
 #'                                  filter = TRUE)
-#' ## Below we will perform a PCA plot
-#' ## see vignette for more details of displaying each plot
+#' ## for illustration, use random sample of 1000 transcripts
+#' set.seed(1234)
+#' airway_filter <- sample(airway_filter, 1000)
 #' ## The following is example code to perform a PCA plot
+#' ## see vignette for more details of displaying each plot
 #' ## diag_plots(se_in = airway_filter,
 #' ##            name = "airway example data",
 #' ##            pca = TRUE)
