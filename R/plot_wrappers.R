@@ -85,7 +85,8 @@
 #' @examples
 #' ## Load the example data set and attach
 #' ## The example below will display a PCA plot before normalisation
-#' data("airway")
+#' library(airway)
+#' data(airway)
 #' ## Name the groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify the file locations

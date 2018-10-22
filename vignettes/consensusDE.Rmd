@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
   #comment = "#>",
   library(consensusDE),
   library(airway),
-  data("airway"),
+  data(airway),
   colData(airway)$group <- colData(airway)$dex,
   colData(airway)$file <- rownames(colData(airway)),
   airway_filter <- buildSummarized(summarized = airway,

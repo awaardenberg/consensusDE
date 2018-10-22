@@ -53,7 +53,8 @@
 #' @examples
 #' ## Load the example data set and attach - see vignette for more details
 #' ## The example below will perfrom DE analysis on all pairs of data
-#' data("airway")
+#' library(airway)
+#' data(airway)
 #' ## Name groups of the data.
 #' colData(airway)$group <- colData(airway)$dex
 #' ## Identify file locations
