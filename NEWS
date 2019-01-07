@@ -1,0 +1,5 @@
+Changes in version 1.0.0 (2018-11-01)
++ Submitted to Bioconductor
+
+Changes in version 1.0.1 (2019-12-07)
++ Fixed bugs - build gtf from path
