@@ -116,9 +116,12 @@ if(is.null(summarized) & (!is.null(read_format))){
     singleEnd_paired <- TRUE
 }
 
-if(!is.null(tx_db) & !is.null(gtf))
+if(!is.null(tx_db) & !is.null(gtf)){
   warning("Both a tx_db object and path to gtf file have been provided. The path
             to the gtf file will be used in this instance.")
+  tx_db <- NULL
+}
+      
 # be careful with more than one worker here: is extremely memory intense!
 # check n_cores is integer; BamFileList_yiedsize is NA_integer_ or an integer...
 is_wholenumber <-
@@ -169,10 +172,12 @@ if(is.null(summarized)){
                "in the directory provided:", bam_dir, "\n",
                "Action: Check file names match or correct sample_table
                 file/format provided.", sep=" "))
-
-    if(!is.null(tx_db) & !is.null(gtf)){
+  
+  # if a txdb is not provided, but a gtf object is:
+  if(is.null(tx_db) & !is.null(gtf)){
       txdb <- makeTxDbFromGFF(gtf, format="gtf", circ_seqs=character())
   }
+  # if a gtf is not provided, but a txdb object is:
   if(!is.null(tx_db) & is.null(gtf)){
       txdb <- tx_db
   }
