@@ -145,7 +145,7 @@ if(is.null(output_log))
           be saved")
 if(!(filter == TRUE || filter == FALSE))
   stop("filter can only be filter=TRUE or filter=FALSE\n")
-if(filter != TRUE & is.null(sample_table))
+if(filter == TRUE & is.null(sample_table))
   stop("Filtering can only be done if a sample_table table
        has been provided with groups\n")
 
