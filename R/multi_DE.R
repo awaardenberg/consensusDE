@@ -77,7 +77,7 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds
-#' @importFrom DESeq2 DESeqDataSet DESeq
+#' @importFrom DESeq2 DESeqDataSet DESeq counts
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
 #' @importFrom EDASeq betweenLaneNormalization

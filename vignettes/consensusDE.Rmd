@@ -1,7 +1,7 @@
 ---
 title: 'consensusDE: DE analysis using multiple algorithms'
 author: "Ashley J. Waardenberg"
-date: 'Last modified: 2018-10-19. Compiled: `r Sys.Date()`'
+date: 'Last modified: 2019-01-08. Compiled: `r Sys.Date()`'
 output:
   html_document:
     highlight: tango
@@ -86,7 +86,9 @@ file_list <- list.files(system.file("extdata", package="GenomicAlignments"),
                         full = TRUE)
 
 # Prepare a sample table to be used with buildSummarized()
-# must be comprised of a minimum of two columns, named "file" and "group", with one additional column: "pairing" if the data is paired
+# must be comprised of a minimum of two columns, named "file" and "group", 
+# with one additional column: "pairs" if the data is paired
+
 sample_table <- data.frame("file" = basename(file_list),
                            "group" = c("treat", "untreat"))
 

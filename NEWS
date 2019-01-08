@@ -3,3 +3,7 @@ Changes in version 1.0.0 (2018-11-01)
 
 Changes in version 1.0.1 (2019-12-07)
 + Fixed bugs - build gtf from path
+
+Changes in version 1.0.2 (2019-12-08)
++ Fixed bugs - counts added to NAMESPACE
++ update vignette
