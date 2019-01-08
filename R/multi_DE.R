@@ -80,10 +80,8 @@
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
-#' @importFrom EDASeq betweenLaneNormalization counts
-## @import EDASeq
+#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet counts
 #' @importFrom RUVSeq RUVr
-## @importFrom BiocGenerics counts
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
 
