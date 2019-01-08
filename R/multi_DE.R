@@ -77,11 +77,13 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds
-#' @importFrom DESeq2 DESeqDataSet DESeq counts
+#' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
-#' @importFrom EDASeq betweenLaneNormalization
+#' @importFrom EDASeq betweenLaneNormalization counts
+## @import EDASeq
 #' @importFrom RUVSeq RUVr
+## @importFrom BiocGenerics counts
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
 
