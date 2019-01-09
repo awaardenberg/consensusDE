@@ -176,7 +176,7 @@ head(all_pairs_airway$merged[["untrt-trt"]])
 
 ## Annotating DE results
 
-It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ```annotations``` and setting ```ensembl_annotate = TRUE```. Annotations needs to be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for human from BioConductor. For example, to install the database for the mouse annotation, go to: http://bioconductor.org/packages/org.Mm.eg.db and follow the instructions. Ensure that after installing the database package, that the library is loaded using ```library(org.Mm.eg.db)```. When running, "'select()' returned 1:many mapping between keys and columns" will appear on the command line. This is the result of multiple mapped transcript ID to Annotations. Only the first annotation is reported. See ```?multi_de_pairs``` for additional documentation.
+It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ``ensembl_annotate```. Annotations needs to be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for human from BioConductor. For example, to install the database for the mouse annotation, go to http://bioconductor.org/packages/org.Mm.eg.db and follow the instructions. Ensure that after installing the database package that the library is loaded using ```library(org.Mm.eg.db)```. When running, "'select()' returned 1:many mapping between keys and columns" will appear on the command line. This is the result of multiple mapped transcript ID to Annotations. Only the first annotation is reported. See ```?multi_de_pairs``` for additional documentation.
 
 An example of annotating the above filtered airway data is provided below:
 
@@ -186,13 +186,11 @@ An example of annotating the above filtered airway data is provided below:
 library(org.Hs.eg.db)
 
 # call multi_de_pairs(), 
-# set annotations argument to org.Hs.eg.db
-# and ensembl_annotate to TRUE
+# set ensembl_annotate argument to org.Hs.eg.db
 all_pairs_airway <- multi_de_pairs(summarized = airway_filter,
                                    paired = "unpaired",
                                    ruv_correct = FALSE,
-                                   annotations = org.Hs.eg.db,
-                                   ensembl_annotate = TRUE)
+                                   ensembl_annotate = org.Hs.eg.db)
 
 ```
 

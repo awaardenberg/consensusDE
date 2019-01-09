@@ -31,12 +31,9 @@
 #'   SummarizedExperiment object and models for DE analysis. Options = TRUE,
 #'   FALSE. Default = FALSE.
 #' @param ensembl_annotate If the dataset has been mapped to ensembl transcript
-#' identifiers, obtain additional annotation of the ensembl transcripts. If set
-#' to TRUE, a Genome Wide Annotation object must also be provided (see below). 
-#' Default = FALSE
-#' @param annotations A R Genome Wide Annotation object e.g. org.Mm.eg.db for 
-#' mouse or org.Hs.eg.db for human. Must be provided if ensembl_annotate is set 
-#' to TRUE. Default = NULL
+#' identifiers, obtain additional annotation of the ensembl transcripts. A R 
+#' Genome Wide Annotation object e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for
+#'  human must be provided. Default = NULL
 #' @param plot_dir Full path to directory for output of plots (pdf files). See
 #' ?diag_plots for more details. Default = NULL
 #' @param output_voom If you wish to output the results of the Voom analysis,
@@ -93,7 +90,6 @@ multi_de_pairs <- function(summarized = NULL,
                            adjust_method = "BH",
                            ruv_correct = FALSE,
                            ensembl_annotate = FALSE,
-                           annotations = NULL,
                            plot_dir = NULL,
                            output_voom = NULL,
                            output_edger = NULL,
@@ -109,35 +105,30 @@ if((adjust_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
        \"hochberg\", \"hommel\", \"bonferroni\", \"BH\", \"BY\", \"fdr\" or
        \"none\"\n")
 }
-
 if(is.null(plot_dir) && verbose == TRUE)
   message("No output directory provided for plots. Plots will not be generated")
-
-if(ensembl_annotate == TRUE & is.null(annotations))
-  stop("ensembl_annotate was set to TRUE, but no annotation object detected. Set
-        ensembl_annotate to FALSE and rerun, or define the annotation object")
-
 # check the database
-if(ensembl_annotate == TRUE & !is.null(annotations)){
-  if(annotations@class[1] != "OrgDb"){
-    stop("annotations is not the correct format. Annotations needs to be a 
-          Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
+if(!is.null(ensembl_annotate)){
+  if(ensembl_annotate@class[1] != "OrgDb"){
+    stop("ensembl_annotate is not the correct format. ensembl_annotate needs to 
+          be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
           org.Hs.eg.db for human from BioConductor")
   }
   # check that EMSEMBL is in there:
-  if("ENSEMBL" %in% keytypes(annotations) == FALSE){
-    stop("ENSEMBL is not an available key in the annotation database. 
-          Annotations is not the correct format. Annotations needs to be a 
-          Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
+  if("ENSEMBL" %in% keytypes(ensembl_annotate) == FALSE){
+    stop("ENSEMBL is not an available key in the ensembl_annotate database. 
+          ensembl_annotate is not the correct format. ensembl_annotate needs to 
+          be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
           org.Hs.eg.db for human from BioConductor")
   }
   # option to add other variables in future
-  if(!identical(c("PATH", "SYMBOL", "GENENAME") %in% columns(annotations), 
+  if(!identical(c("PATH", "SYMBOL", "GENENAME") %in% columns(ensembl_annotate), 
                c(TRUE, TRUE, TRUE))){
-    stop("PATH, SYMBOL and GENENAME are not available columns in the annotation 
-          database provided. Annotations is not the correct format. Annotations 
-          needs to be a Genome Wide Annotation object, e.g. org.Mm.eg.db for 
-          mouse or org.Hs.eg.db for human from BioConductor")
+    stop("PATH, SYMBOL and GENENAME are not available columns in the 
+          ensembl_annotate database provided. ensembl_annotate is not the 
+          correct format. ensembl_annotate needs to be a Genome Wide Annotation 
+          object, e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for human from 
+          BioConductor")
   }
 }
   
@@ -324,13 +315,13 @@ merged <- lapply(seq_len(set_length), function(i)
                 adjust_method = adjust_method,
                 return = "short"))
 
-if(ensembl_annotate==TRUE & !is.null(annotations)){
+if(!is.null(ensembl_annotate)){
   if(verbose){
     message("# Annotating results")
   }
     merged <- lapply(seq_len(length(merged)), function(i)
                      annotate_ensembl(merged[[i]], merged[[i]]$ID,
-                                      tx_db = annotations))
+                                      tx_db = ensembl_annotate))
 }
 names(merged) <- names(deseq_res$short_results)
 
