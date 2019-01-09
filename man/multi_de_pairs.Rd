@@ -6,7 +6,7 @@
 \usage{
 multi_de_pairs(summarized = NULL, paired = "unpaired",
   intercept = NULL, adjust_method = "BH", ruv_correct = FALSE,
-  ensembl_annotate = FALSE, plot_dir = NULL, output_voom = NULL,
+  ensembl_annotate = NULL, plot_dir = NULL, output_voom = NULL,
   output_edger = NULL, output_deseq = NULL, output_combined = NULL,
   verbose = FALSE)
 }
