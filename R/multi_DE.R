@@ -31,10 +31,9 @@
 #'   SummarizedExperiment object and models for DE analysis. Options = TRUE,
 #'   FALSE. Default = FALSE.
 #' @param ensembl_annotate If the dataset has been mapped to ensembl transcript
-#' identifiers, obtain additional annotation of the ensembl transcripts. If set
-#' to TRUE, a tx_db must also be provided (see below). Default = FALSE
-#' @param tx_db An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene. Must
-#'  be provided if ensembl_annotate is set to TRUE. Default = NULL
+#' identifiers, obtain additional annotation of the ensembl transcripts. A R 
+#' Genome Wide Annotation object e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for
+#'  human must be provided. Default = NULL
 #' @param plot_dir Full path to directory for output of plots (pdf files). See
 #' ?diag_plots for more details. Default = NULL
 #' @param output_voom If you wish to output the results of the Voom analysis,
@@ -76,11 +75,11 @@
 #'
 #' @export multi_de_pairs
 #'
-#' @importFrom AnnotationDbi mapIds
+#' @importFrom AnnotationDbi mapIds keytypes columns
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
-#' @importFrom EDASeq betweenLaneNormalization
+#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet counts
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
@@ -91,7 +90,6 @@ multi_de_pairs <- function(summarized = NULL,
                            adjust_method = "BH",
                            ruv_correct = FALSE,
                            ensembl_annotate = FALSE,
-                           tx_db = NULL,
                            plot_dir = NULL,
                            output_voom = NULL,
                            output_edger = NULL,
@@ -107,13 +105,33 @@ if((adjust_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
        \"hochberg\", \"hommel\", \"bonferroni\", \"BH\", \"BY\", \"fdr\" or
        \"none\"\n")
 }
-
 if(is.null(plot_dir) && verbose == TRUE)
   message("No output directory provided for plots. Plots will not be generated")
-
-if(ensembl_annotate == TRUE & is.null(tx_db))
-  warning("ensembl_annotate was set to TRUE, but no tx_db detected. Continuing
-           without annotation of data\n")
+# check the database
+if(!is.null(ensembl_annotate)){
+  if(ensembl_annotate@class[1] != "OrgDb"){
+    stop("ensembl_annotate is not the correct format. ensembl_annotate needs to 
+          be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
+          org.Hs.eg.db for human from BioConductor")
+  }
+  # check that EMSEMBL is in there:
+  if("ENSEMBL" %in% keytypes(ensembl_annotate) == FALSE){
+    stop("ENSEMBL is not an available key in the ensembl_annotate database. 
+          ensembl_annotate is not the correct format. ensembl_annotate needs to 
+          be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
+          org.Hs.eg.db for human from BioConductor")
+  }
+  # option to add other variables in future
+  if(!identical(c("PATH", "SYMBOL", "GENENAME") %in% columns(ensembl_annotate), 
+               c(TRUE, TRUE, TRUE))){
+    stop("PATH, SYMBOL and GENENAME are not available columns in the 
+          ensembl_annotate database provided. ensembl_annotate is not the 
+          correct format. ensembl_annotate needs to be a Genome Wide Annotation 
+          object, e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for human from 
+          BioConductor")
+  }
+}
+  
 if((ruv_correct != TRUE) & (ruv_correct != FALSE))
     stop("ruv_correct can only be either \"TRUE\" or \"FALSE\".
          Please specify\n")
@@ -297,13 +315,13 @@ merged <- lapply(seq_len(set_length), function(i)
                 adjust_method = adjust_method,
                 return = "short"))
 
-if(ensembl_annotate==TRUE & !is.null(tx_db)){
+if(!is.null(ensembl_annotate)){
   if(verbose){
     message("# Annotating results")
   }
     merged <- lapply(seq_len(length(merged)), function(i)
                      annotate_ensembl(merged[[i]], merged[[i]]$ID,
-                                      tx_db = tx_db))
+                                      tx_db = ensembl_annotate))
 }
 names(merged) <- names(deseq_res$short_results)
 
@@ -710,7 +728,7 @@ DEseq_contrasts <- function(contrast_matrix, n){
 }
 
 
-# annotation wrapper
+# annotation wrapper - works with "OrgDb" object from BioConductor
 annotate_ensembl <- function(data_in,
                              ids,
                              tx_db){

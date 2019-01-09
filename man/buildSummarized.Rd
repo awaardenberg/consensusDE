@@ -8,7 +8,8 @@ buildSummarized(sample_table = NULL, bam_dir = NULL, gtf = NULL,
   tx_db = NULL, mapping_mode = "Union", read_format = NULL,
   ignore_strand = FALSE, fragments = TRUE, summarized = NULL,
   output_log = NULL, filter = FALSE,
-  BamFileList_yiedsize = NA_integer_, n_cores = 1, verbose = FALSE)
+  BamFileList_yiedsize = NA_integer_, n_cores = 1,
+  force_build = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{sample_table}{A data.frame describing samples. For paired mode it must
@@ -40,12 +41,12 @@ are "paired" or "single". An option must be selected. Default = NULL}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
- for explanation. Default=TRUE}
+ for explanation. Default = TRUE}
 
 \item{summarized}{Full path to a summarized experiment file. If
 buildSummarized() has already been performed, the output summarized file,
 saved in "/output_log/se.R" can be used as the input (e.g. if filtering is to
- be done). Default=NULL}
+ be done). Default = NULL}
 
 \item{output_log}{Full path to directory for output of log files and saved
 summarized experiment generated.}
@@ -60,7 +61,11 @@ of lines to an integer value. See "yieldSize" description in ?BamFileList for
 
 \item{n_cores}{Number of cores to utilise for reading in Bam files. Use with
 caution as can create memory issues if BamFileList_yiedsize is not
-parameterised. Default=1}
+parameterised. Default = 1}
+
+\item{force_build}{If the sample_table contains less than two replicates per
+group, force a summarizedExperiment object to be build. Otherwise 
+buildSummarized will halt. Default = FALSE.}
 
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
 }
@@ -97,6 +102,7 @@ sample_table <- data.frame("file" = basename(file_list),
 summarized_dm3 <- buildSummarized(sample_table = sample_table,
                                   bam_dir = bam_dir,
                                   tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-                                  read_format = "paired")
+                                  read_format = "paired",
+                                  force_build = TRUE)
 
 }

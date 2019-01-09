@@ -186,9 +186,11 @@ if(residuals==TRUE && is.null(pData(se_in)$W_1)){
 
   # establish colours - "Set3" is up to 12 distinct colours
   # must have a minimum of 3, this set-up as follows:
+  # sort alphabetically first!
+  
   colors <- brewer.pal(max(length(unique(se_in$group)), 3), "Set3")
+  # to preserve order, use: colors[se_in$group]
 
-  # remove the QC_?
   if(write==TRUE){
     grDevices::pdf(file=paste(plot_dir, "QC_", name, ".pdf", sep=""))
   }
@@ -207,7 +209,7 @@ if(residuals==TRUE && is.null(pData(se_in)$W_1)){
     if(legend == TRUE){
       legend("topright",
              c(as.character(unique(se_in$group))),
-             col=colors,
+             col=colors[unique(se_in$group)],
              pch = c(rep(19, length(unique(se_in$group)))),
              title = "SAMPLE GROUPS", inset = .02, cex=0.5)
     }
@@ -225,7 +227,7 @@ if(residuals==TRUE && is.null(pData(se_in)$W_1)){
       legend("topright",
              c(as.character(unique(se_in$group)),
                paste(seq_len(length(se_in$file)), se_in$file, sep="-")),
-             col=c(colors[1:length(unique(se_in$group))],
+             col=c(colors[unique(se_in$group)],
                    rep("black", length(se_in$file))),
              pch = c(rep(19, length(unique(se_in$group))),
                      rep(0, length(se_in$file))),
@@ -278,7 +280,7 @@ if(residuals==TRUE && is.null(pData(se_in)$W_1)){
       legend("topright",
              c(as.character(unique(se_in$group)),
                paste(seq_len(length(se_in$file)), se_in$file, sep="-")),
-             col=c(colors[1:length(unique(se_in$group))],
+             col=c(colors[unique(se_in$group)],
                    rep("black", length(se_in$file))),
              pch = c(rep(19, length(unique(se_in$group))),
                      rep(0, length(se_in$file))),
@@ -471,7 +473,7 @@ boxplot_wrapper <- function(se_in=NULL,
     legend("topright",
            c(as.character(unique(se_in$group)),
              paste(seq_len(length(se_in$file)), se_in$file, sep="-")),
-           col=c(colors[1:length(unique(se_in$group))],
+           col=c(colors[unique(se_in$group)],
                  rep("black", length(se_in$file))),
            pch = c(rep(19, length(unique(se_in$group))),
                    rep(0, length(se_in$file))),
@@ -516,7 +518,7 @@ plot_density_wrapper <- function(se_in=NULL,
   # add legend
   if(legend==TRUE){
     legend("topright", c(as.character(unique(se_in$group)), "ALL SAMPLES"),
-           col=c(colors, "black"),
+           col=c(colors[unique(se_in$group)], "black"),
            pch = c(rep(19, length(unique(se_in$group)))),
            title = "SAMPLE GROUPS", inset = .02, cex=0.5)
   }
@@ -553,7 +555,7 @@ plot_hclust_wrapper <- function(se_in=NULL,
     legend("topright",
            c(as.character(unique(se_in$group)),
              paste(seq_len(length(se_in$file)), se_in$file, sep="-")),
-           col=c(colors[1:length(unique(se_in$group))],
+           col=c(colors[unique(se_in$group)],
                  rep("black", length(se_in$file))),
            pch = c(rep(19, length(unique(se_in$group))),
                    rep(0, length(se_in$file))),
@@ -598,7 +600,7 @@ plot_PCA_wrapper <- function(se_in=NULL,
   # add legend:
   if(legend==TRUE){
     legend("bottomright", c(as.character(unique(pc_scores$group))),
-                            col=colors,
+                            col=colors[unique(se_in$group)],
                           pch = c(rep(19, length(unique(pc_scores$group)))),
            title = "SAMPLE GROUPS", inset = .02, cex=0.5)
   }
