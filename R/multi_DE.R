@@ -76,20 +76,22 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds keytypes columns
+## @importFrom BiocGenerics counts
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
-#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet counts
+#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
+#' @import BiocGenerics
 
 multi_de_pairs <- function(summarized = NULL,
                            paired = "unpaired",
                            intercept = NULL,
                            adjust_method = "BH",
                            ruv_correct = FALSE,
-                           ensembl_annotate = FALSE,
+                           ensembl_annotate = NULL,
                            plot_dir = NULL,
                            output_voom = NULL,
                            output_edger = NULL,
@@ -109,7 +111,7 @@ if(is.null(plot_dir) && verbose == TRUE)
   message("No output directory provided for plots. Plots will not be generated")
 # check the database
 if(!is.null(ensembl_annotate)){
-  if(ensembl_annotate@class[1] != "OrgDb"){
+  if(inherits(ensembl_annotate, "OrgDb") == FALSE){
     stop("ensembl_annotate is not the correct format. ensembl_annotate needs to 
           be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or 
           org.Hs.eg.db for human from BioConductor")
