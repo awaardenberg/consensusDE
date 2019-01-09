@@ -12,3 +12,7 @@ Changes in version 1.0.2 (2019-12-09)
 + fix annotation documentation for multi_de_pairs()
 + update filter option to permit from summarized experiment
 + update vignette
+
+Changes in version 1.0.3 (2019-12-10)
++ fixed ensembl_annotate option for multi_de_pairs()
++ added BiocGenerics as depends

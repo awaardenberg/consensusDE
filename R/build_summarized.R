@@ -4,7 +4,7 @@
 #' from RNA-seq experiments that overlap a set of transcript features.
 #' Transcript features can be described as a gtf formatted table that is
 #' imported, or using a txdb. This is designed to be straightforward and
-#' minimised parameter for first pass batch RNA-seq analyses.
+#' with minimised parameters for first pass batch RNA-seq analyses.
 #'
 #' @param sample_table A data.frame describing samples. For paired mode it must
 #' contain 3 columns, with the names "file", "group" and "pairs". The filename
@@ -18,7 +18,7 @@
 #' pre-computed summarized experiment file previously generated using
 #' buildSummarized() OR a tx_db object (below). Default = NULL
 #' @param tx_db An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
-#' Default=NULL
+#' Default = NULL
 #' @param mapping_mode Options are "Union", "IntersectionStrict" and
 #' "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 #' Default = "Union"
@@ -45,14 +45,14 @@
 #' caution as can create memory issues if BamFileList_yiedsize is not
 #' parameterised. Default = 1
 #' @param force_build If the sample_table contains less than two replicates per
-#' group, force a summarizedExperiment object to be build. Otherwise 
+#' group, force a summarizedExperiment object to be built. Otherwise 
 #' buildSummarized will halt. Default = FALSE.
 #' @param verbose Verbosity ON/OFF. Default=FALSE
 #'
 #' @examples
 #' ## Extract summarized following example in the vignette
 #' ## The example below will return a summarized experiment
-#' ## tx.db is obtained from TxDb.Dmelanogaster.UCSC.dm3.ensGene library
+#' ## tx_db is obtained from TxDb.Dmelanogaster.UCSC.dm3.ensGene library
 #' library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
 #' ## bam files are obtained from the GenomicAlignments package
 #' 
