@@ -100,13 +100,18 @@ bam_dir <- as.character(gsub(basename(file_list)[1], "", file_list[1]))
 The minimum information is now ready to build a summarized experiment as follows:
 
 ```{r eval=FALSE}
+# NB. force_build = TRUE, is set to allow the Summarized Experiment to be built.
+# This will report a Warning message that less than two replicates are present 
+# in the sample_table.
+
 summarized_dm3 <- buildSummarized(sample_table = sample_table,
                                   bam_dir = bam_dir,
                                   tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-                                  read_format = "paired")
+                                  read_format = "paired",
+                                  force_build = TRUE)
 ```
 
-This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, using the ```gtf``` parameter. To save the summarized experiment externally, for future use, specify the path to save the summarized experiment using ```output_log``` To see details of all parameters see ```?buildSummarized```.
+This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save the summarized experiment externally, for future use, specify the path to save the summarized experiment using ```output_log``` To see details of all parameters see ```?buildSummarized```.
 
 Overview of the summarized experiment:
 ```{r eval=FALSE}
@@ -171,7 +176,25 @@ head(all_pairs_airway$merged[["untrt-trt"]])
 
 ## Annotating DE results
 
-It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ```tx_db``` and setting ```ensembl_annotate = TRUE```. See ```?multi_de_pairs``` for additional documentation.
+It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ```annotations``` and setting ```ensembl_annotate = TRUE```. Annotations needs to be a Genome Wide Annotation object, e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for human from BioConductor. For example, to install the database for the mouse annotation, go to: http://bioconductor.org/packages/org.Mm.eg.db and follow the instructions. Ensure that after installing the database package, that the library is loaded using ```library(org.Mm.eg.db)```. When running, "'select()' returned 1:many mapping between keys and columns" will appear on the command line. This is the result of multiple mapped transcript ID to Annotations. Only the first annotation is reported. See ```?multi_de_pairs``` for additional documentation.
+
+An example of annotating the above filtered airway data is provided below:
+
+```{r eval=FALSE}
+# first ensure annotation database in installed
+# load annotation library:
+library(org.Hs.eg.db)
+
+# call multi_de_pairs(), 
+# set annotations argument to org.Hs.eg.db
+# and ensembl_annotate to TRUE
+all_pairs_airway <- multi_de_pairs(summarized = airway_filter,
+                                   paired = "unpaired",
+                                   ruv_correct = FALSE,
+                                   annotations = org.Hs.eg.db,
+                                   ensembl_annotate = TRUE)
+
+```
 
 ## Writing tables to an output directory
 

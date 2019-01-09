@@ -4,7 +4,11 @@ Changes in version 1.0.0 (2018-11-01)
 Changes in version 1.0.1 (2019-12-07)
 + Fixed bugs - build gtf from path
 
-Changes in version 1.0.2 (2019-12-08)
-+ update vignette
+Changes in version 1.0.2 (2019-12-09)
 + filter error update to buildSummarized
++ add error reporting with incorrect pairs or group numbers
++ add option to force_build to buildSummarized
 + fix color bug in diag_plots()
++ fix annotation documentation for multi_de_pairs()
++ update filter option to permit from summarized experiment
++ update vignette

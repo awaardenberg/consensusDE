@@ -6,7 +6,7 @@
 \usage{
 multi_de_pairs(summarized = NULL, paired = "unpaired",
   intercept = NULL, adjust_method = "BH", ruv_correct = FALSE,
-  ensembl_annotate = FALSE, tx_db = NULL, plot_dir = NULL,
+  ensembl_annotate = FALSE, annotations = NULL, plot_dir = NULL,
   output_voom = NULL, output_edger = NULL, output_deseq = NULL,
   output_combined = NULL, verbose = FALSE)
 }
@@ -42,10 +42,12 @@ description. Currently only RUVr, which used the residuals is enabled and one
 
 \item{ensembl_annotate}{If the dataset has been mapped to ensembl transcript
 identifiers, obtain additional annotation of the ensembl transcripts. If set
-to TRUE, a tx_db must also be provided (see below). Default = FALSE}
+to TRUE, a Genome Wide Annotation object must also be provided (see below). 
+Default = FALSE}
 
-\item{tx_db}{An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene. Must
-be provided if ensembl_annotate is set to TRUE. Default = NULL}
+\item{annotations}{A R Genome Wide Annotation object e.g. org.Mm.eg.db for 
+mouse or org.Hs.eg.db for human. Must be provided if ensembl_annotate is set 
+to TRUE. Default = NULL}
 
 \item{plot_dir}{Full path to directory for output of plots (pdf files). See
 ?diag_plots for more details. Default = NULL}

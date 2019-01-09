@@ -28,11 +28,11 @@
 #' ?summarizeOverlaps for explanation. Default=FALSE
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
-#'   for explanation. Default=TRUE
+#'   for explanation. Default = TRUE
 #' @param summarized Full path to a summarized experiment file. If
 #' buildSummarized() has already been performed, the output summarized file,
 #' saved in "/output_log/se.R" can be used as the input (e.g. if filtering is to
-#'  be done). Default=NULL
+#'  be done). Default = NULL
 #' @param output_log Full path to directory for output of log files and saved
 #' summarized experiment generated.
 #' @param filter Perform filtering of low count and missing data from the
@@ -43,7 +43,10 @@
 #'  an explanation.
 #' @param n_cores Number of cores to utilise for reading in Bam files. Use with
 #' caution as can create memory issues if BamFileList_yiedsize is not
-#' parameterised. Default=1
+#' parameterised. Default = 1
+#' @param force_build If the sample_table contains less than two replicates per
+#' group, force a summarizedExperiment object to be build. Otherwise 
+#' buildSummarized will halt. Default = FALSE.
 #' @param verbose Verbosity ON/OFF. Default=FALSE
 #'
 #' @examples
@@ -70,7 +73,8 @@
 #' summarized_dm3 <- buildSummarized(sample_table = sample_table,
 #'                                   bam_dir = bam_dir,
 #'                                   tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-#'                                   read_format = "paired")
+#'                                   read_format = "paired",
+#'                                   force_build = TRUE)
 #' 
 #' @return A summarized experiment
 #'
@@ -98,6 +102,7 @@ buildSummarized <- function(sample_table = NULL,
                             filter = FALSE,
                             BamFileList_yiedsize = NA_integer_,
                             n_cores = 1,
+                            force_build = FALSE,
                             verbose = FALSE){
 
 ####///---- check inputs ----\\\###
@@ -144,10 +149,11 @@ if(is.null(output_log))
   warning("No output directory provided. The se file and sample_table will not
           be saved")
 if(!(filter == TRUE || filter == FALSE))
-  stop("filter can only be filter=TRUE or filter=FALSE\n")
-if(filter == TRUE & is.null(sample_table))
-  stop("Filtering can only be done if a sample_table table
-       has been provided with groups\n")
+  stop("filter can only be filter = TRUE or filter = FALSE\n")
+
+if(filter == TRUE & (is.null(sample_table) & is.null(summarized)))
+  stop("Filtering can only be done if a sample_table table has been provided 
+       with groups or a previously generated summarized experiment is provided")
 
 ####///---- input checks DONE ----\\\###
 
@@ -163,15 +169,35 @@ if(is.null(summarized)){
   if("group" %in% colnames(sample_table) == FALSE){
     stop("A sample_table must be supplied with a column labelled \"group\"")
   }
+  # check that there are minimum of two replicates in groups...
+  if(force_build == FALSE && min(summary(sample_table$group)) < 2)
+    stop("The sample_table provided contains groups with less than two 
+         replicates")
+  if(force_build == TRUE && min(summary(sample_table$group)) < 2)
+    warning("The sample_table provided contains groups with less than two 
+         replicates. You have selected to continue with force_build = TRUE")
+  # check paired options are not matching the groups... i.e. replicated
+  if("pairs" %in% colnames(sample_table) == TRUE){
+    check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
+    if(length(unique(check_pairs)) != nrow(sample_table)){
+      stop("pairs column in sample_table contains pairings from same group.
+           Technical replication is not supported.")
+    }
+    if(min(summary(sample_table$pairs)) < 2)
+      stop("The sample_table provided contains pairs with less than two 
+           samples.")
+  }
+  
   bam_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
   # must be exact match before proceeding
-
   if(length(intersect(bam_files, sample_table$file)) != nrow(sample_table))
     warning(paste("There is not a matching number of files from:\n",
                   sample_table, "\n",
                "in the directory provided:", bam_dir, "\n",
                "Action: Check file names match or correct sample_table
                 file/format provided.", sep=" "))
+  
+   
   
   # if a txdb is not provided, but a gtf object is:
   if(is.null(tx_db) & !is.null(gtf)){
@@ -294,7 +320,7 @@ if(!is.null(output_log)){
 # option to filter data
 if(filter == TRUE){
   # filter low count data based on group assignments
-  keep <- filterByExpr(assays(se_out)$counts, group=sample_table$group)
+  keep <- filterByExpr(assays(se_out)$counts, group=colData(se_out)$group)
   se_out <- se_out[rownames(se_out)[keep] ,]
 }
   if(verbose){
