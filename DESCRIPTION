@@ -1,7 +1,7 @@
 Package: consensusDE
 Type: Package
 Title: RNA-seq analysis using multiple algorithms 
-Version: 1.0.4
+Version: 1.1.4
 Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform DE analysis using multiple 
