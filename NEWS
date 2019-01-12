@@ -16,3 +16,7 @@ Changes in version 1.0.2 (2019-12-09)
 Changes in version 1.0.3 (2019-12-10)
 + fixed ensembl_annotate option for multi_de_pairs()
 + added BiocGenerics as depends
+
+Changes in version 1.0.4 (2019-12-12)
++ fixed ranking bug for combined data
++ adding min_p to merged tables

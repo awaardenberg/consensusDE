@@ -589,12 +589,21 @@ return="short"){
     # extract PValue columns for ranking.
     rank_this <- cbind(merge_out$PValue.x,
                        merge_out$PValue.y,
-                       merge_out$PValue.z)
+                       merge_out$PValue)
     # sum of ranks
     merge_out$sum <- rowSums(sapply(seq_len(ncol(rank_this)),
-    function(i) rank(rank_this[,i])))
+                                    function(i) rank(rank_this[,i])))
+    
+    
     # order results by sum of ranks
     merge_out <- merge_out[order(merge_out$sum, decreasing=FALSE),]
+    
+    # determine which is the max p value (or contains least probability)
+    merge_out$p_max <- sapply(seq_len(nrow(merge_out)), function(i)
+                        max(c(merge_out$PValue.x[i], 
+                              merge_out$PValue.y[i], 
+                              merge_out$PValue[i])))
+
 
     if(return=="short"){
         merge_out <- data.frame(merge_out$ID,
@@ -606,7 +615,8 @@ return="short"){
         rank(merge_out$PValue.x),
         rank(merge_out$PValue.y),
         rank(merge_out$PValue),
-        merge_out$sum)
+        merge_out$sum,
+        merge_out$p_max)
         colnames(merge_out) <- c("ID", "AveExpr", "LogFC",
         paste(name_x, "_adj_p", sep=""),
         paste(name_y, "_adj_p", sep=""),
@@ -614,7 +624,8 @@ return="short"){
         paste(name_x, "_rank", sep=""),
         paste(name_y, "_rank", sep=""),
         paste(name_z, "_rank", sep=""),
-        "rank_sum")
+        "rank_sum",
+        "p_max")
 
     }
     return(merge_out)
