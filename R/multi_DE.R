@@ -76,7 +76,7 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds keytypes columns
-## @importFrom BiocGenerics counts
+#' @importFrom S4Vectors DataFrame
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment assays colData colData<-
@@ -178,7 +178,7 @@ if(!is.null(plot_dir)){
 design <- build_design(se = summarized,
                        pairing = paired,
                        intercept = intercept,
-                       ruv = FALSE)
+                       ruv = NULL)
 contrast_matrix <- build_contrast_matrix(design$table, design$design)
 
 # 1. build design.matrix
@@ -249,12 +249,18 @@ if(ruv_correct==TRUE){
   # update to include RUVr weights
   design <- stats::model.matrix(~0 + W_1 + group, data = ruv_se[[2]]$table)
   colnames(design) <- gsub("group", "", colnames(design))
-
+  
+  # current only supports "W_1", i.e. k = 1 from RUVSeq
   design <- build_design(se = ruv_se[[1]],
                          pairing = paired,
                          intercept = intercept,
-                         ruv = TRUE)
+                         ruv = "W_1")
   contrast_matrix <- build_contrast_matrix(design$table, design$design)
+  # update the colData in the SE
+  # this is to include the W_1 in the summarized file for model
+  colData(summarized) <- DataFrame(design$table)
+  colnames(summarized) <- colData(summarized)$file
+  # update design matrix
   design <- design$design
 }
 
@@ -510,8 +516,9 @@ if(!is.null(deseq_dir)){
     utils::write.table(data.frame(merged$deseq$full_results[[i]]),
                 file=paste(deseq_dir, names(merged$deseq$full_results[i]),
                            "_deseq_results.tsv", sep=""),
-                sep="\t",
-                row.names=TRUE)))
+                sep = "\t",
+                row.names = TRUE,
+                col.names = NA)))
 }
 if(!is.null(voom_dir)){
   # VOOM
@@ -519,8 +526,9 @@ if(!is.null(voom_dir)){
     utils::write.table(data.frame(merged$voom$full_results[[i]]),
                 file=paste(voom_dir, names(merged$voom$full_results[i]),
                            "_voom_results.tsv", sep=""),
-                sep="\t",
-                row.names=TRUE)))
+                sep = "\t",
+                row.names = TRUE,
+                col.names = NA)))
 }
 
 if(!is.null(edger_dir)){
@@ -529,8 +537,9 @@ if(!is.null(edger_dir)){
     utils::write.table(data.frame(merged$edger$full_results[[i]]),
                 file=paste(edger_dir, names(merged$edger$full_results[i]),
                            "_edger_results.tsv", sep=""),
-                sep="\t",
-                row.names=TRUE)))
+                sep = "\t",
+                row.names = TRUE,
+                col.names = NA)))
 }
 }
 #########################################################
@@ -705,17 +714,19 @@ build_design <- function(se = NULL,
         design <- stats::model.matrix(~pairs + group)
     }
     # for RUV n=1
-    if(pairing=="unpaired" && ruv=="W_1"){
-        W_1 <- as.numeric(se$W_1)
-        design_table <- data.frame(design_table,
-        "W_1"=se$W_1)
-        design <- stats::model.matrix(~W_1 + group)
-    }
-    if(pairing=="paired" && ruv=="W_1"){
-        W_1 <- as.numeric(se$W_1)
-        design_table <- data.frame(design_table,
-        "W_1"=se$W_1)
-        design <- stats::model.matrix(~W_1 + pairs + group)
+    if(!is.null(ruv)){
+      if(pairing=="unpaired" && ruv=="W_1"){
+          W_1 <- as.numeric(se$W_1)
+          design_table <- data.frame(design_table,
+          "W_1"=se$W_1)
+          design <- stats::model.matrix(~W_1 + group)
+      }
+      if(pairing=="paired" && ruv=="W_1"){
+          W_1 <- as.numeric(se$W_1)
+          design_table <- data.frame(design_table,
+          "W_1"=se$W_1)
+          design <- stats::model.matrix(~W_1 + pairs + group)
+      }
     }
     # format model.matrix
     rownames(design) <- colnames(se)

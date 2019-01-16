@@ -20,3 +20,7 @@ Changes in version 1.0.3 (2019-12-10)
 Changes in version 1.0.4 (2019-12-12)
 + fixed ranking bug for combined data
 + adding min_p to merged tables
+
+Changes in version 1.0.5 (2019-12-16)
++ fixing first column name when writing tables for edgeR, Voom and DEseq
++ fixed RUV model coefficients carrying through
