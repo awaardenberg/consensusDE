@@ -8,13 +8,13 @@ Changes in version 1.0.2 (2019-12-09)
 + filter error update to buildSummarized
 + add error reporting with incorrect pairs or group numbers
 + add option to force_build to buildSummarized
-+ fix color bug in diag_plots()
-+ fix annotation documentation for multi_de_pairs()
++ fix color bug in diag_plots
++ fix annotation documentation for multi_de_pairs
 + update filter option to permit from summarized experiment
 + update vignette
 
 Changes in version 1.0.3 (2019-12-10)
-+ fixed ensembl_annotate option for multi_de_pairs()
++ fixed ensembl_annotate option for multi_de_pairs
 + added BiocGenerics as depends
 
 Changes in version 1.0.4 (2019-12-12)
@@ -24,3 +24,8 @@ Changes in version 1.0.4 (2019-12-12)
 Changes in version 1.0.5 (2019-12-16)
 + fixing first column name when writing tables for edgeR, Voom and DEseq
 + fixed RUV model coefficients carrying through
+
+Changes in version 1.0.6 (2019-12-31)
++ add legend and label option to multi_de_plots
++ fixing bug for paired mode model matrix in multi_de_pairs without RUV
++ update vignette

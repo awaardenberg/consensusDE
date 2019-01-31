@@ -8,7 +8,7 @@ multi_de_pairs(summarized = NULL, paired = "unpaired",
   intercept = NULL, adjust_method = "BH", ruv_correct = FALSE,
   ensembl_annotate = NULL, plot_dir = NULL, output_voom = NULL,
   output_edger = NULL, output_deseq = NULL, output_combined = NULL,
-  verbose = FALSE)
+  verbose = FALSE, legend = TRUE, label = TRUE)
 }
 \arguments{
 \item{summarized}{A "RangedSummarizedExperiment" object with included groups
@@ -64,6 +64,12 @@ addition to the combined data, it will also output the raw count and
 normalised data to the same directory. Default = NULL}
 
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
+
+\item{legend}{Include legend in plots? Legend is based on group data in
+summarized Options: TRUE, FALSE. Default = TRUE}
+
+\item{label}{Include point labels in plots? Points are based on ID column
+after DE analysis from merged results. Options: TRUE, FALSE. Default = TRUE}
 }
 \value{
 A list of all the comparisons conducted.
