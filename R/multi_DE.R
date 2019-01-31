@@ -47,6 +47,11 @@
 #' COMBINED analysis, provide a full path to directory for output of files. In
 #' addition to the combined data, it will also output the raw count and
 #' normalised data to the same directory. Default = NULL
+#' @param legend Include legend in plots? Legend is based on group data in
+#' summarized Options: TRUE, FALSE. Default = TRUE
+#' @param label Include point labels in plots? Points are based on ID column
+#' after DE analysis from merged results. Options: TRUE, FALSE. Default = TRUE
+
 #' @param verbose Verbosity ON/OFF. Default=FALSE
 #'
 #' @examples
@@ -97,7 +102,9 @@ multi_de_pairs <- function(summarized = NULL,
                            output_edger = NULL,
                            output_deseq = NULL,
                            output_combined = NULL,
-                           verbose = FALSE){
+                           verbose = FALSE,
+                           legend = TRUE,
+                           label = TRUE){
 
 ####///---- check inputs ----\\\###
 # check the p-value adjustment method is allowable
@@ -179,15 +186,10 @@ design <- build_design(se = summarized,
                        pairing = paired,
                        intercept = intercept,
                        ruv = NULL)
-contrast_matrix <- build_contrast_matrix(design$table, design$design)
 
-# 1. build design.matrix
-design_table <- data.frame("file" = as.character(summarized$file),
-                           "group" = summarized$group)
-design <- stats::model.matrix(~summarized$group)
-#update the names of the matrix:
-colnames(design) <- gsub("summarized\\$group", "", colnames(design))
-colnames(design)[1] <- "Intercept"
+contrast_matrix <- build_contrast_matrix(design$table, design$design)
+design_table <- design$table
+design <- design$design
 
 # 2. normalise and do QC:
 se_qc <- newSeqExpressionSet(assays(summarized)$counts,
@@ -202,7 +204,9 @@ if(plot_this == TRUE){
                        write = write_this,
                        plot_dir = plot_dir,
                        mapped_reads = plot_this,
-                       name = "transcript_mapped_reads"))
+                       name = "transcript_mapped_reads",
+                       legend = legend,
+                       label = label))
 }
 # normalise for library size (i.e. remove as an effect..)
 se_qc_norm <- betweenLaneNormalization(se_qc, which="upper")
@@ -219,7 +223,9 @@ if(plot_this == TRUE){
                        hclust = plot_this,
                        density = plot_this,
                        boxplot = plot_this,
-                       name = "NO_corrected_NO_normalised"))
+                       name = "NO_corrected_NO_normalised",
+                       legend = legend,
+                       label = label))
   invisible(diag_plots(se_in = se_qc_norm,
                        write = write_this,
                        plot_dir = plot_dir,
@@ -228,7 +234,9 @@ if(plot_this == TRUE){
                        hclust = plot_this,
                        density = plot_this,
                        boxplot = plot_this,
-                       name = "NO_corrected_YES_normalised"))
+                       name = "NO_corrected_YES_normalised",
+                       legend = legend,
+                       label = label))
 }
 # 3 RUV analysis
 # this will basically update the design matrix and contrast matrix
@@ -245,7 +253,9 @@ if(ruv_correct==TRUE){
                          intercept = intercept,
                          plot_this = plot_this,
                          write_this = write_this,
-                         verbose = verbose)
+                         verbose = verbose,
+                         legend = legend,
+                         label = label)
   # update to include RUVr weights
   design <- stats::model.matrix(~0 + W_1 + group, data = ruv_se[[2]]$table)
   colnames(design) <- gsub("group", "", colnames(design))
@@ -357,7 +367,9 @@ if(plot_this == TRUE){
                        plot_dir = plot_dir,
                        ma = plot_this,
                        merged_in = merged_plots,
-                       name = "MA_plots"))
+                       name = "MA_plots",
+                       legend = legend,
+                       label = label))
   if(verbose){
     message("# Producing Volcano plots. Will be located here: ", plot_dir)
   }
@@ -366,7 +378,9 @@ if(plot_this == TRUE){
                        plot_dir = plot_dir,
                        volcano = plot_this,
                        merged_in = merged_plots,
-                       name = "Volcano_plots"))
+                       name = "Volcano_plots",
+                       legend = legend,
+                       label = label))
   if(verbose){
     message("# Producing p-value distribution plots. 
                Will be located here: ", plot_dir)
@@ -376,7 +390,9 @@ if(plot_this == TRUE){
                        plot_dir = plot_dir,
                        merged_in = merged_plots,
                        p_dist = plot_this,
-                       name = "p_value_distributions"))
+                       name = "p_value_distributions",
+                       legend = legend,
+                       label = label))
 }
 
 if(!is.null(output_voom) |
@@ -700,17 +716,17 @@ build_design <- function(se = NULL,
     if(!is.null(intercept)){
         group <- stats::relevel(group, intercept)
     }
-    design_table <- data.frame("file"=as.character(se$file),
-                               "group"=group)
+    design_table <- data.frame("file" = as.character(se$file),
+                               "group" = group)
     # default is unpaired analysis
-    if(pairing=="unpaired"){
+    if(pairing == "unpaired"){
         design <- stats::model.matrix(~group)
     }
     # paired, factor pairing
-    if(pairing=="paired"){
+    if(pairing == "paired"){
         pairs <- factor(se$pairs)
         design_table <- data.frame(design_table,
-        "pairs"=se$pairs)
+                                  "pairs" = se$pairs)
         design <- stats::model.matrix(~pairs + group)
     }
     # for RUV n=1
@@ -724,13 +740,14 @@ build_design <- function(se = NULL,
       if(pairing=="paired" && ruv=="W_1"){
           W_1 <- as.numeric(se$W_1)
           design_table <- data.frame(design_table,
-          "W_1"=se$W_1)
+                                     "W_1" = se$W_1)
           design <- stats::model.matrix(~W_1 + pairs + group)
       }
     }
     # format model.matrix
     rownames(design) <- colnames(se)
     colnames(design) <- gsub("group", "", colnames(design))
+    colnames(design) <- gsub("pairs", "", colnames(design))
     colnames(design)[1] <- "Intercept"
 return(list("design" = design, "table" = design_table))
 }
@@ -810,7 +827,6 @@ voom_wrapper <- function(se, design, contrast_matrix){
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
 edger_wrapper <- function(se, design, contrast_matrix){
-
     y <- DGEList(counts=assays(se)$counts,
     group=se$group)
     # normalise accross groups
@@ -820,20 +836,20 @@ edger_wrapper <- function(se, design, contrast_matrix){
     fit_edger <- glmFit(y_disp, design)
     # fit each comparison from contrast_matrix of interest
     all_fit <- lapply(seq_len(ncol(contrast_matrix)), function(i)
-    glmLRT(fit_edger, contrast=as.numeric(contrast_matrix[,i])))
-    all_results <- lapply(seq_len(length(all_fit)), function(i)
-    topTags(all_fit[[i]], n=nrow(all_fit[[i]]$coefficients)))
+                      glmLRT(fit_edger, contrast=as.numeric(contrast_matrix[,i])))
+                      all_results <- lapply(seq_len(length(all_fit)), function(i)
+                      topTags(all_fit[[i]], n=nrow(all_fit[[i]]$coefficients)))
     # short table for merging with other methods
     short_results <- lapply(seq_len(length(all_results)), function(i)
-    data.frame("AveExpr"=all_results[[i]]$table$logCPM,
-    "logFC"=all_results[[i]]$table$logFC,
-    "PValue"=all_results[[i]]$table$PValue,
-    row.names=rownames(all_results[[i]]$table)))
+                            data.frame("AveExpr" = all_results[[i]]$table$logCPM,
+                                       "logFC" = all_results[[i]]$table$logFC,
+                                       "PValue" = all_results[[i]]$table$PValue,
+                                       row.names = rownames(all_results[[i]]$table)))
     names(all_results) <- names(short_results) <- colnames(contrast_matrix)
-    return(list("short_results"=short_results,
-    "full_results"=all_results,
-    "fitted"=all_fit,
-    "contrasts"=contrast_matrix))
+    return(list("short_results" = short_results,
+                "full_results" = all_results,
+                "fitted" = all_fit,
+                "contrasts" = contrast_matrix))
 }
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
@@ -875,6 +891,8 @@ ruvr_correct <- function(se = NULL,
                          plot_this = FALSE,
                          write_this = FALSE,
                          plot_dir = NULL,
+                         legend = TRUE,
+                         label = TRUE,
                          verbose = FALSE){
 
     ruv <- newSeqExpressionSet(assays(se)$counts,
@@ -912,19 +930,22 @@ ruvr_correct <- function(se = NULL,
                              hclust=plot_this,
                              density=plot_this,
                              boxplot=plot_this,
-                             name="YES_corrected_YES_normalised"))
+                             name="YES_corrected_YES_normalised",
+                             legend = legend,
+                             label = label))
         # plot model residuals
         invisible(diag_plots(se_in = ruv_se,
                              write = write_this,
                              plot_dir = plot_dir,
                              residuals = plot_this,
-                             name = "RUVr_residuals"))
+                             name = "RUVr_residuals",
+                             legend = legend,
+                             label = label))
     }
 
     # update colData in the SE to include the W_1
     colData(se) <- S4Vectors::DataFrame(design$table)
     colnames(se) <- colData(se)$file
-
-    return(list(se, design))
+return(list(se, design))
 }
 
