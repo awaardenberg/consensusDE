@@ -1,7 +1,7 @@
 Package: consensusDE
 Type: Package
 Title: RNA-seq analysis using multiple algorithms 
-Version: 1.1.6
+Version: 1.1.7
 Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform DE analysis using multiple 
@@ -24,23 +24,25 @@ Depends:
     R (>= 3.5),
     BiocGenerics
 Imports:
-    limma,
+    airway,
     AnnotationDbi,
-    Biobase,
-    edgeR,
     BiocParallel,
-    GenomicAlignments,
-    EDASeq,
-    RColorBrewer,
-    GenomicFeatures,
-    SummarizedExperiment,
-    DESeq2 (>= 1.20.0),
-    pcaMethods,
+    Biobase,
+    Biostrings,
     dendextend,
-    RUVSeq,
+    DESeq2 (>= 1.20.0),
+    EDASeq,
+    edgeR,
+    EnsDb.Hsapiens.v86,
+    GenomicAlignments,
+    GenomicFeatures,
+    limma,
+    org.Hs.eg.db,
+    pcaMethods,
+    RColorBrewer,
     Rsamtools,
+    RUVSeq,
     S4Vectors,
     stats,
-    TxDb.Dmelanogaster.UCSC.dm3.ensGene,
-    airway,
-    Biostrings
+    SummarizedExperiment,
+    TxDb.Dmelanogaster.UCSC.dm3.ensGene
