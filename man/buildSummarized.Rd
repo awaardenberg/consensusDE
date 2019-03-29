@@ -5,9 +5,9 @@
 \title{Generate summarized Read File for DE analyses}
 \usage{
 buildSummarized(sample_table = NULL, bam_dir = NULL, gtf = NULL,
-  tx_db = NULL, mapping_mode = "Union", read_format = NULL,
-  ignore_strand = FALSE, fragments = TRUE, summarized = NULL,
-  output_log = NULL, filter = FALSE,
+  tx_db = NULL, map_reads = "transcript", mapping_mode = "Union",
+  read_format = NULL, ignore_strand = FALSE, fragments = TRUE,
+  summarized = NULL, output_log = NULL, filter = FALSE,
   BamFileList_yiedsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
@@ -28,6 +28,10 @@ buildSummarized() OR a tx_db object (below). Default = NULL}
 
 \item{tx_db}{An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 Default = NULL}
+
+\item{map_reads}{Which features to count reads by. Options are "transcript", 
+"exon" or "cds". This will invoke transcriptsBy(), exonsBy() or cdsBy() 
+respectively. Default = "transcript"}
 
 \item{mapping_mode}{Options are "Union", "IntersectionStrict" and
 "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.

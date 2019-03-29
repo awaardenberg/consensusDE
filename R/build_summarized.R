@@ -19,6 +19,9 @@
 #' buildSummarized() OR a tx_db object (below). Default = NULL
 #' @param tx_db An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 #' Default = NULL
+#' @param map_reads Which features to count reads by. Options are "transcript", 
+#'  "exon" or "cds". This will invoke transcriptsBy(), exonsBy() or cdsBy() 
+#'  respectively. Default = "transcript"
 #' @param mapping_mode Options are "Union", "IntersectionStrict" and
 #' "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 #' Default = "Union"
@@ -81,8 +84,9 @@
 #' @export buildSummarized
 #'
 #' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom S4Vectors metadata metadata<-
 #' @importFrom Rsamtools BamFileList
-#' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy
+#' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy transcriptsBy cdsBy genes
 #' @importFrom GenomicAlignments summarizeOverlaps
 #' @importFrom BiocParallel register MulticoreParam
 #' @importFrom edgeR filterByExpr
@@ -93,6 +97,7 @@ buildSummarized <- function(sample_table = NULL,
                             bam_dir = NULL,
                             gtf = NULL,
                             tx_db = NULL,
+                            map_reads = "transcript",
                             mapping_mode = "Union",
                             read_format = NULL,
                             ignore_strand = FALSE,
@@ -154,6 +159,10 @@ if(!(filter == TRUE || filter == FALSE))
 if(filter == TRUE & (is.null(sample_table) & is.null(summarized)))
   stop("Filtering can only be done if a sample_table table has been provided 
        with groups or a previously generated summarized experiment is provided")
+  
+if(!(map_reads == "transcript" || map_reads == "exon" || map_reads ==  "cds"))
+  stop("map_reads must be specified as either \"transcript\", \"exon\", 
+       or \"cds\"")
 
 ####///---- input checks DONE ----\\\###
 
@@ -205,7 +214,17 @@ if(is.null(summarized)){
       txdb <- tx_db
   }
   # extract exon coordinates, by default.
-  ebg <- exonsBy(txdb, by="gene")
+  # add option for mapping
+  if(map_reads == "transcript"){
+      ebg <- transcriptsBy(x = txdb, by = "gene")
+  }
+  if(map_reads == "exon"){
+    ebg <- exonsBy(x = txdb, by = "gene")
+  }
+  if(map_reads == "cds"){
+    ebg <- cdsBy(x = txdb, by = "gene")
+  }
+  
   # Read bam files in
   bam_files <- paste(bam_dir, sample_table$file, sep="")
   bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
@@ -221,7 +240,9 @@ if(is.null(summarized)){
                           singleEnd = singleEnd_paired,
                           ignore.strand = ignore_strand,
                           fragments = fragments)
-
+  # add metadata to summarized object
+  metadata(se)$gene_coords <- genes(txdb)
+  
   # ensure SE is labelled (important for model fits later)
   colData(se) <- S4Vectors::DataFrame(sample_table)
   colnames(se) <- sample_table$file
@@ -285,6 +306,10 @@ if(!is.null(summarized)){
              column. This will create errors when running the DE analysis.
              Update the summarized experiment with the experimental details
              before processing to DE analysis")
+  }
+  if(is.null(tx_db) == FALSE){
+    metadata(se_out)$gene_coords <- genes(tx_db)
+    message("A txdb was provided as input. Meta-data has been updated")
   }
 
   if(!is.null(output_log)){
