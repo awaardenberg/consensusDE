@@ -81,10 +81,11 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds keytypes columns
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata metadata<-
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
-#' @importFrom SummarizedExperiment assays colData colData<-
+#' @importFrom SummarizedExperiment colData<-
+#' @importFrom SummarizedExperiment assays colData
 #' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
@@ -191,6 +192,24 @@ contrast_matrix <- build_contrast_matrix(design$table, design$design)
 design_table <- design$table
 design <- design$design
 
+# set default
+gene_coords <- NULL
+# but if gene_coords exists as a meta-data
+if(is.null(metadata(summarized)$gene_coords) == FALSE){
+    gene_coords <- data.frame(metadata(summarized)$gene_coords)
+    gene_coords$coords <- paste("chr",
+                                gene_coords$seqnames,
+                                ":",
+                                gene_coords$start,
+                                "-",
+                                gene_coords$end,
+                                sep="")
+    gene_coords <- data.frame("ID" = gene_coords$gene_id,
+                              "coords" = gene_coords$coords,
+                              "strand" = gene_coords$strand,
+                              "width" = gene_coords$width)
+}
+
 # 2. normalise and do QC:
 se_qc <- newSeqExpressionSet(assays(summarized)$counts,
                             phenoData = data.frame(colData(summarized)),
@@ -240,11 +259,14 @@ if(plot_this == TRUE){
 }
 # 3 RUV analysis
 # this will basically update the design matrix and contrast matrix
+
+# establish output of RUV corrected summarized object
+summarized_ruv <- NULL
+
 if(ruv_correct==TRUE){
   if(verbose){
     message("# [OPTIONS] RUV batch correction has been selected")
   }
-
   # determine the intercept from the base file
   ruv_se <- ruvr_correct(se = summarized,
                          plot_dir = plot_dir,
@@ -256,12 +278,10 @@ if(ruv_correct==TRUE){
                          verbose = verbose,
                          legend = legend,
                          label = label)
-  # update to include RUVr weights
-  design <- stats::model.matrix(~0 + W_1 + group, data = ruv_se[[2]]$table)
-  colnames(design) <- gsub("group", "", colnames(design))
-  
+  # update the summarized_ruv now
+  summarized_ruv <- ruv_se$ruv_summarized
   # current only supports "W_1", i.e. k = 1 from RUVSeq
-  design <- build_design(se = ruv_se[[1]],
+  design <- build_design(se = ruv_se$se,
                          pairing = paired,
                          intercept = intercept,
                          ruv = "W_1")
@@ -337,9 +357,13 @@ if(!is.null(ensembl_annotate)){
   if(verbose){
     message("# Annotating results")
   }
-    merged <- lapply(seq_len(length(merged)), function(i)
-                     annotate_ensembl(merged[[i]], merged[[i]]$ID,
-                                      tx_db = ensembl_annotate))
+  
+  # now annotate each emsembl transcript
+  merged <- lapply(seq_len(length(merged)), function(i)
+                     annotate_ensembl(merged[[i]],
+                                      tx_db = ensembl_annotate,
+                                      coords = gene_coords
+                                      ))
 }
 names(merged) <- names(deseq_res$short_results)
 
@@ -417,6 +441,7 @@ if(!is.null(output_voom) |
   }
   # invoke write_table_wrapper
   write_table_wrapper(summarized = summarized,
+                      summarized_ruv = summarized_ruv,
                       merged = list("merged" = merged,
                                     "deseq" = deseq_res,
                                     "edger" = edger_res,
@@ -438,7 +463,7 @@ if(ruv_correct == TRUE){
               "deseq" = deseq_res,
               "edger" = edger_res,
               "voom" = voom_res,
-              "summarized" = ruv_se[[1]]))
+              "summarized" = summarized_ruv))
 }
 
 if(ruv_correct == FALSE){
@@ -454,14 +479,13 @@ if(ruv_correct == FALSE){
 # helper function for annotating and writing tables:
 # these are seperate commands for writing tables:
 write_table_wrapper <- function(summarized = NULL,
+                                summarized_ruv = NULL,
                                 merged = NULL,
                                 voom_dir = NULL,
                                 edger_dir = NULL,
                                 deseq_dir = NULL,
                                 merged_dir = NULL){
 
-# format checks
-  # check the merged is a list format and check the names! etc.
 #########################################################
 # obtain raw and normalised counts
 raw <- assays(summarized)$counts
@@ -586,13 +610,6 @@ intersect_test <- function(x=NULL, y=NULL, z=NULL){
     }
     message("# intersect = ", length(common))
 return(common)
-}
-
-# function for obtaining non-de rows from the outputs of the XX$short_results
-# from the DE analysis:
-non_de_rows <- function(input_data, p_cut=0.5){
-    data_out <- rownames(input_data[input_data$PValue > p_cut,])
-    return(data_out)
 }
 
 # function for merging 3 DE tables in "short" format
@@ -771,16 +788,15 @@ DEseq_contrasts <- function(contrast_matrix, n){
 
 # annotation wrapper - works with "OrgDb" object from BioConductor
 annotate_ensembl <- function(data_in,
-                             ids,
-                             tx_db){
-
-    short_ens <- gsub("\\..*", "", ids)
+                             tx_db,
+                             coords = NULL
+                             ){
+    short_ens <- gsub("\\..*", "", data_in$ID)
     data_in$genename <- mapIds(tx_db,
                               keys = short_ens,
                               column="GENENAME",
                               keytype="ENSEMBL",
                               multiVals="first")
-
     data_in$symbol <- mapIds(tx_db,
                             keys = short_ens,
                             column="SYMBOL",
@@ -791,6 +807,12 @@ annotate_ensembl <- function(data_in,
                           column="PATH",
                           keytype="ENSEMBL",
                           multiVals="first")
+
+    # add coordinates IF PROVIDED
+    # filter wont follow through with coords, so LH merge
+    if(is.null(coords) == FALSE){
+        data_in <- merge(data_in, coords, by="ID", all.x=TRUE)
+    }
 return(data_in)
 }
 
@@ -946,6 +968,8 @@ ruvr_correct <- function(se = NULL,
     # update colData in the SE to include the W_1
     colData(se) <- S4Vectors::DataFrame(design$table)
     colnames(se) <- colData(se)$file
-return(list(se, design))
+return(list("se" = se, 
+            "design" = design,
+            "ruv_summarized" = ruv_se))
 }
 
