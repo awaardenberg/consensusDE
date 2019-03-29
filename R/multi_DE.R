@@ -208,6 +208,7 @@ if(is.null(metadata(summarized)$gene_coords) == FALSE){
                               "coords" = gene_coords$coords,
                               "strand" = gene_coords$strand,
                               "width" = gene_coords$width)
+    gene_coords$coords <- gsub("chrchr", "chr", gene_coords$coords)
 }
 
 # 2. normalise and do QC:
