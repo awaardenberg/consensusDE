@@ -88,8 +88,8 @@
 #'
 #' @export buildSummarized
 #'
-#' @importFrom SummarizedExperiment colData colData<-
-#' @importFrom S4Vectors metadata metadata<-
+#' @importFrom SummarizedExperiment colData colData<- SummarizedExperiment
+#' @importFrom S4Vectors metadata metadata<- SimpleList
 #' @importFrom Rsamtools BamFileList
 #' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy transcriptsBy cdsBy genes
 #' @importFrom GenomicAlignments summarizeOverlaps
@@ -97,6 +97,8 @@
 #' @importFrom edgeR filterByExpr
 #' @import TxDb.Dmelanogaster.UCSC.dm3.ensGene
 #' @import Biostrings
+#' @importFrom utils read.table
+#' @importFrom ensembldb transcripts
 
 buildSummarized <- function(sample_table = NULL,
                             bam_dir = NULL,
@@ -187,6 +189,8 @@ if(is.null(summarized)){
   if("group" %in% colnames(sample_table) == FALSE){
     stop("A sample_table must be supplied with a column labelled \"group\"")
   }
+  # ensure sample table groups are refactored
+  sample_table$group <- as.factor(as.character(sample_table$group))
   # check that there are minimum of two replicates in groups...
   if(force_build == FALSE && min(summary(sample_table$group)) < 2)
     stop("The sample_table provided contains groups with less than two 
@@ -267,14 +271,8 @@ if(is.null(summarized)){
     counts <- counts[!as.character(counts$ID) %in% as.character(stats$ID),]
     rownames(counts) <- counts$ID
     counts <- counts[!colnames(counts) %in% c("ID")]
-    #colData <- DataFrame(sample_table, 
-    #                     row.names = sample_table$file)
-
     se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)),
                                 rowRanges=transcripts(txdb))
-    # colData(se) <- S4Vectors::DataFrame(sample_table)
-    # add metadata:
-    
   }
   
   
