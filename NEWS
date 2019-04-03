@@ -1,7 +1,10 @@
-Changes in version 1.0.7 (2019-03-29)
+Changes in version 1.0.7 (2019-03-01)
 + export RUV corrected summarized file before model fit
 + option to summarize read by transcript, exon or cds added to buildSummarized
 + added chromosome coordinates to annotation of merged results
++ include gtf or txdb as meta-data in summarized object
++ added option, htseq_dir, to import HTSEQ count files to buildSummarized
++ fixed sample_table format check (refactorise)
 
 Changes in version 1.0.6 (2019-12-31)
 + add legend and label option to multi_de_plots
