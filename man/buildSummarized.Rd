@@ -4,8 +4,9 @@
 \alias{buildSummarized}
 \title{Generate summarized Read File for DE analyses}
 \usage{
-buildSummarized(sample_table = NULL, bam_dir = NULL, gtf = NULL,
-  tx_db = NULL, map_reads = "transcript", mapping_mode = "Union",
+buildSummarized(sample_table = NULL, bam_dir = NULL,
+  htseq_dir = NULL, gtf = NULL, tx_db = NULL,
+  map_reads = "transcript", mapping_mode = "Union",
   read_format = NULL, ignore_strand = FALSE, fragments = TRUE,
   summarized = NULL, output_log = NULL, filter = FALSE,
   BamFileList_yiedsize = NA_integer_, n_cores = 1,
@@ -19,7 +20,13 @@ This is not required if an existing summarized file is provided. Default=NULL}
 
 \item{bam_dir}{Full path to location of bam files listed in the "file" column
 in the sample_table provided above. This is not required if an existing
-summarized file is provided. Default=NULL}
+summarized file is provided. Only a bam_dir or a htseq_dir can be provided.
+ Default = NULL}
+
+\item{htseq_dir}{Full path to location of htseq text files listed in the 
+"file" column in the sample_table provided above. This is not required if an 
+existing summarized file is provided.Only a bam_dir or a htseq_dir can be 
+provided. Files must end in ".txt". Default = NULL}
 
 \item{gtf}{Full path to a gtf file describing the transcript coordinates to
 map the RNA-seq reads to. GTF file is not required if providing a

@@ -12,7 +12,12 @@
 #' This is not required if an existing summarized file is provided. Default=NULL
 #' @param bam_dir Full path to location of bam files listed in the "file" column
 #'  in the sample_table provided above. This is not required if an existing
-#'  summarized file is provided. Default=NULL
+#'  summarized file is provided. Only a bam_dir or a htseq_dir can be provided.
+#'   Default = NULL
+#' @param htseq_dir Full path to location of htseq text files listed in the 
+#' "file" column in the sample_table provided above. This is not required if an 
+#' existing summarized file is provided.Only a bam_dir or a htseq_dir can be 
+#' provided. Files must end in ".txt". Default = NULL
 #' @param gtf Full path to a gtf file describing the transcript coordinates to
 #' map the RNA-seq reads to. GTF file is not required if providing a
 #' pre-computed summarized experiment file previously generated using
@@ -95,6 +100,7 @@
 
 buildSummarized <- function(sample_table = NULL,
                             bam_dir = NULL,
+                            htseq_dir = NULL,
                             gtf = NULL,
                             tx_db = NULL,
                             map_reads = "transcript",
@@ -141,9 +147,12 @@ if(!is_wholenumber(n_cores))
   stop("n_cores must be an integer")
   # register the number of cores to used:
   register(MulticoreParam(workers=n_cores))
-if(is.null(bam_dir) & is.null(summarized))
-  stop("A directory to Bam files must be provided when a summarized file is not
-       provided.")
+if(is.null(bam_dir) & is.null(htseq_dir) & is.null(summarized))
+  stop("A directory to .bam or htseq text files must be provided when a 
+        summarized file is not provided.")
+if(!is.null(bam_dir) & !is.null(htseq_dir))
+  stop("EITHER a directory to .bam or htseq text files can be provided - NOT 
+        BOTH. Please provide a path to only one and rerun.")
 if(is.null(gtf) & is.null(tx_db) & is.null(summarized))
   stop("No summarized file is provided and missing a GTF or txdb file. Provide
         full path to gtf file or a txdb for mapping bam file reads")
@@ -196,15 +205,21 @@ if(is.null(summarized)){
       stop("The sample_table provided contains pairs with less than two 
            samples.")
   }
-  
-  bam_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
+  if(!is.null(bam_dir)){
+    input_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
+    #bam_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
+  }
+  if(!is.null(htseq_dir)){
+    input_files <- list.files(htseq_dir, full.names = FALSE, pattern = ".txt")
+  }
   # must be exact match before proceeding
-  if(length(intersect(bam_files, sample_table$file)) != nrow(sample_table))
+  if(length(intersect(input_files, sample_table$file)) != nrow(sample_table))
     warning(paste("There is not a matching number of files from:\n",
                   sample_table, "\n",
                "in the directory provided:", bam_dir, "\n",
                "Action: Check file names match or correct sample_table
                 file/format provided.", sep=" "))
+
   # if a txdb is not provided, but a gtf object is:
   if(is.null(tx_db) & !is.null(gtf)){
       txdb <- makeTxDbFromGFF(gtf, format="gtf", circ_seqs=character())
@@ -213,40 +228,77 @@ if(is.null(summarized)){
   if(!is.null(tx_db) & is.null(gtf)){
       txdb <- tx_db
   }
-  # extract exon coordinates, by default.
-  # add option for mapping
-  if(map_reads == "transcript"){
-      ebg <- transcriptsBy(x = txdb, by = "gene")
+  # optional mapping methods (only valid if reading in bam files?)
+  if(!is.null(bam_dir) & map_reads == "transcript"){
+     ebg <- transcriptsBy(x = txdb, by = "gene")
   }
-  if(map_reads == "exon"){
+  if(!is.null(bam_dir) & map_reads == "exon"){
     ebg <- exonsBy(x = txdb, by = "gene")
   }
-  if(map_reads == "cds"){
+  if(!is.null(bam_dir) & map_reads == "cds"){
     ebg <- cdsBy(x = txdb, by = "gene")
   }
   
-  # Read bam files in
-  bam_files <- paste(bam_dir, sample_table$file, sep="")
-  bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+  if(!is.null(htseq_dir)){
+    if(verbose){
+      message("HTseq counts selected. Txdb will be summarized at exon level.")
+    }
+    ebg <- exonsBy(x = txdb, by = "gene")
+  }
+  
   if(verbose){
     message("# Building summarized experiment")
   }
-  # this is fine for RNA-seq, as it may be possible that only one of the pairs
-  # aligns to the feature of interest due to transcript annotaiton. There is an
-  # option to turn off.
-  se <- summarizeOverlaps(features = ebg,
-                          reads = bamfiles,
-                          mode = mapping_mode,
-                          singleEnd = singleEnd_paired,
-                          ignore.strand = ignore_strand,
-                          fragments = fragments)
-  # add metadata to summarized object
-  metadata(se)$gene_coords <- genes(txdb)
+
+  if(!is.null(htseq_dir)){
+    # list files
+    htseq_files <- paste(htseq_dir, sample_table$file, sep="")
+    # read files into tables
+    htseq_files <- lapply(seq_along(htseq_files), function(i)
+                    read.table(htseq_files[i], 
+                               col.names = c("ID", 
+                                             as.character(sample_table$file[i]))))
+    #  merge together...
+    #library(data.table)
+    counts <- Reduce(function(...) merge(..., all=TRUE, by="ID"), htseq_files) 
+    # some stats to keep
+    stats <- data.frame(counts[grep("__", counts$ID),])
+    #remove from counts
+    counts <- counts[!as.character(counts$ID) %in% as.character(stats$ID),]
+    rownames(counts) <- counts$ID
+    counts <- counts[!colnames(counts) %in% c("ID")]
+    #colData <- DataFrame(sample_table, 
+    #                     row.names = sample_table$file)
+
+    se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)),
+                                rowRanges=transcripts(txdb))
+    # colData(se) <- S4Vectors::DataFrame(sample_table)
+    # add metadata:
+    
+  }
+  
+  
+  if(!is.null(bam_dir)){
+    # establish bam files to read in
+    bam_files <- paste(bam_dir, sample_table$file, sep="")
+    bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+    se <- summarizeOverlaps(features = ebg,
+                            reads = bamfiles,
+                            mode = mapping_mode,
+                            singleEnd = singleEnd_paired,
+                            ignore.strand = ignore_strand,
+                            fragments = fragments)
+  }
   
   # ensure SE is labelled (important for model fits later)
   colData(se) <- S4Vectors::DataFrame(sample_table)
   colnames(se) <- sample_table$file
 
+  # add metadata to summarized object
+  metadata(se)$gene_coords <- genes(txdb)
+  #metadata(se)$consensusDE_parameters <-
+  
+  
   # name will be the filename, not including dir.
   # save se for future use
   if(!is.null(output_log)){
