@@ -344,6 +344,7 @@ set_length <- max(length(voom_res$short_results),
 if(verbose){
   message("# Creating merged/consensus results for edgeR, DEseq2 and Voom")
 }
+
 merged <- lapply(seq_len(set_length), function(i)
   merge_results(x = edger_res$short_results[[i]],
                 y = deseq_res$short_results[[i]],
@@ -359,7 +360,7 @@ if(!is.null(ensembl_annotate)){
     message("# Annotating results")
   }
   
-  # now annotate each emsembl transcript
+  # now annotate each ensembl transcript
   merged <- lapply(seq_len(length(merged)), function(i)
                      annotate_ensembl(merged[[i]],
                                       tx_db = ensembl_annotate,
@@ -367,6 +368,8 @@ if(!is.null(ensembl_annotate)){
                                       ))
 }
 names(merged) <- names(deseq_res$short_results)
+
+# sort data
 
 if(plot_this == TRUE){
   if(verbose){
@@ -814,6 +817,9 @@ annotate_ensembl <- function(data_in,
     if(is.null(coords) == FALSE){
         data_in <- merge(data_in, coords, by="ID", all.x=TRUE)
     }
+    # reorder the data.frame:
+    data_in <- data_in[order(data_in$rank_sum, decreasing=FALSE),]
+    
 return(data_in)
 }
 
