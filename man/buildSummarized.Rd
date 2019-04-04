@@ -45,7 +45,8 @@ respectively. Default = "transcript"}
 Default = "Union"}
 
 \item{read_format}{Are the reads from single-end or paired-end data? Option
-are "paired" or "single". An option must be selected. Default = NULL}
+are "paired" or "single". An option must be selected if htseq_dir is NULL. 
+Default = NULL}
 
 \item{ignore_strand}{Ignore strand when mapping reads? see "ignore_strand" in
 ?summarizeOverlaps for explanation. Default=FALSE}

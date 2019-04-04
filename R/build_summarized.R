@@ -31,7 +31,8 @@
 #' "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 #' Default = "Union"
 #' @param read_format Are the reads from single-end or paired-end data? Option
-#' are "paired" or "single". An option must be selected. Default = NULL
+#' are "paired" or "single". An option must be selected if htseq_dir is NULL. 
+#' Default = NULL
 #' @param ignore_strand Ignore strand when mapping reads? see "ignore_strand" in
 #' ?summarizeOverlaps for explanation. Default=FALSE
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
@@ -119,10 +120,11 @@ buildSummarized <- function(sample_table = NULL,
                             verbose = FALSE){
 
 ####///---- check inputs ----\\\###
-if(is.null(summarized) & (is.null(read_format)))
+if(is.null(summarized) & is.null(htseq_dir) & (is.null(read_format)))
   stop("read_format must be specified as either \"paired\", or \"single\" if
-       a summarized file has not been generated.")
-if(is.null(summarized) & (!is.null(read_format))){
+       a summarized file or htseq_dir has not been generated .")
+
+if(is.null(summarized) & is.null(htseq_dir) & (!is.null(read_format))){
   if(read_format != "paired" & read_format != "single"){
     stop("read_format must be specified as either \"paired\", or \"single\" if
        a summarized file has not been generated.")
@@ -271,8 +273,10 @@ if(is.null(summarized)){
     counts <- counts[!as.character(counts$ID) %in% as.character(stats$ID),]
     rownames(counts) <- counts$ID
     counts <- counts[!colnames(counts) %in% c("ID")]
+    
     se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)),
-                                rowRanges=transcripts(txdb))
+                                rowRanges=ebg)
+    
   }
   
   
@@ -291,6 +295,7 @@ if(is.null(summarized)){
   # ensure SE is labelled (important for model fits later)
   colData(se) <- S4Vectors::DataFrame(sample_table)
   colnames(se) <- sample_table$file
+  #colnames(se) <- make.names(sample_table$file)
 
   # add metadata to summarized object
   metadata(se)$gene_coords <- genes(txdb)
