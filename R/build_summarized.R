@@ -1,10 +1,12 @@
 #' Generate summarized Read File for DE analyses
 #
-#' @description This function will create a summarized file, decribing reads
-#' from RNA-seq experiments that overlap a set of transcript features.
+#' @description This function will create a summarized experiment, decribing 
+#' reads from RNA-seq experiments that overlap a set of transcript features.
 #' Transcript features can be described as a gtf formatted table that is
-#' imported, or using a txdb. This is designed to be straightforward and
-#' with minimised parameters for first pass batch RNA-seq analyses.
+#' imported, or using a txdb. The summarized experiment can be build directly
+#' from bam files or by reading in counts in htseq format. This is designed to 
+#' be straightforward and with minimised parameters for batch style RNA-seq 
+#' analyses.
 #'
 #' @param sample_table A data.frame describing samples. For paired mode it must
 #' contain 3 columns, with the names "file", "group" and "pairs". The filename
@@ -12,12 +14,11 @@
 #' This is not required if an existing summarized file is provided. Default=NULL
 #' @param bam_dir Full path to location of bam files listed in the "file" column
 #'  in the sample_table provided above. This is not required if an existing
-#'  summarized file is provided. Only a bam_dir or a htseq_dir can be provided.
-#'   Default = NULL
-#' @param htseq_dir Full path to location of htseq text files listed in the 
-#' "file" column in the sample_table provided above. This is not required if an 
-#' existing summarized file is provided.Only a bam_dir or a htseq_dir can be 
-#' provided. Files must end in ".txt". Default = NULL
+#'  summarized file is provided. Default = NULL
+#' @param htseq_dir Full path to location of htseq files listed in the "file" 
+#' column in the sample_table described above. This is not required if an 
+#' existing summarized file is provided. Files must end in ".txt". Default = 
+#' NULL
 #' @param gtf Full path to a gtf file describing the transcript coordinates to
 #' map the RNA-seq reads to. GTF file is not required if providing a
 #' pre-computed summarized experiment file previously generated using

@@ -1,7 +1,7 @@
 ---
 title: 'consensusDE: DE analysis using multiple algorithms'
 author: "Ashley J. Waardenberg"
-date: 'Last modified: 2019-01-08. Compiled: `r Sys.Date()`'
+date: 'Last modified: 2019-04-25. Compiled: `r Sys.Date()`'
 output:
   html_document:
     highlight: tango
@@ -29,10 +29,10 @@ consensusDE aims to make differential expression (DE) analysis, with reporting o
 
 consensusDE is simplified into two functions:
 
-+ **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files) against a transcriptome
++ **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files or htseq count files) against a transcriptome
 + **```multi_de_pairs()```** perform DE analysis (all possible pairwise comparisons)
 
-Below, we demonstrate the core functionality of consensusDE as well as how to plot results from obtained results using the ```diag_plots``` function.
+Below, we demonstrate the core functionality of consensusDE as well as how to plot results using the ```diag_plots``` function.
 
 # consensusDE examples
 
@@ -53,7 +53,7 @@ data("airway")
 
 # Building a summarized experiment
 
-A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam files (more below on format), 2) a directory of where to locate the bam files and 3) a transcript database to map the reads to (either a gtf file or txdb). We will use bam files attached to this package (from GenomicAlignments) as an example:
+A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam/files (more below on format), 2) a directory of where to locate the bam/htseq files and 3) a transcript database to map the reads to (either a gtf file or txdb). Below we will use bam files attached to this package (from GenomicAlignments) as an example:
 
 ```{r echo=TRUE}
 # build a design table that lists the files and their grouping
