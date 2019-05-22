@@ -143,39 +143,37 @@ if(!is.null(ensembl_annotate)){
 }
   
 if((ruv_correct != TRUE) & (ruv_correct != FALSE))
-    stop("ruv_correct can only be either \"TRUE\" or \"FALSE\".
-         Please specify\n")
+    stop("ruv_correct can only be either \"TRUE\" or \"FALSE\". Please specify")
 if(is.null(summarized)){
   if(verbose){
     message("# NO summarized experiment provided")
   }
 }
-
 # check the format of the table
 sample_table <- data.frame(colData(summarized))
-if(ncol(sample_table)==2 &&
-   (colnames(sample_table[1])!="file" ||
-    colnames(sample_table[2])!="group" ||
-    ncol(sample_table)<2))
-  stop("For unpaired data, a table must be supplied with 2 columns.
-       The first column must be labelled \"file\" and the second labelled
+if("file" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
+       \"file\"")
+}
+if("group" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
        \"group\"")
-if(ncol(sample_table)==3 &&
-   (colnames(sample_table[1])!="file" ||
-    colnames(sample_table[2])!="group" ||
-    colnames(sample_table[3])!="pairs" ||
-    ncol(sample_table)<2))
-  stop("For paired data, a table must be supplied using with 3 columns. The
-        first column must be labelled \"file\", the second labelled \"group\"
-        and third \"pairs\"")
-
+}
+if("group" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
+       \"group\"")
+}
 if((paired != "paired") & (paired != "unpaired"))
   stop("paired can only be either \"paired\" or \"unpaired\". Please specify\n")
+if(paired == "paired" & ("pairs" %in% colnames(sample_table) == FALSE)){
+  stop("For paired data, a table must be supplied with a column labelled 
+       \"pairs\"")
+}
 
-# set vaiables for plotting results
+# set variables for plotting results
 plot_this <- FALSE
 write_this <- FALSE
-# if the dir is not null, see plot.this to true
+# if dir is not null, see plot_this to TRUE
 if(!is.null(plot_dir)){
   plot_this <- TRUE
   write_this <- TRUE
