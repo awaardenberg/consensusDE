@@ -196,7 +196,8 @@ if(!(map_reads == "transcript" || map_reads == "exon" || map_reads ==  "cds"))
        or \"cds\"")
 
 ####///---- input checks DONE ----\\\###
-
+# intialise stats for metadata
+stats <- c()
 # create a new summarized object and save
 if(is.null(summarized)){
   if(verbose){
@@ -223,16 +224,32 @@ if(is.null(summarized)){
     warning("The sample_table provided contains groups with less than two 
          replicates. You have selected to continue with force_build = TRUE")
   # check paired options are not matching the groups... i.e. replicated
+  
   if("pairs" %in% colnames(sample_table) == TRUE){
-    check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
-    if(length(unique(check_pairs)) != nrow(sample_table)){
-      stop("pairs column in sample_table contains pairings from same group.
-           Technical replication is not supported.")
+    # if technical replicates are to be merged
+    if("tech_replicate"  %in% colnames(sample_table) == TRUE){
+      check_techs <- paste(sample_table$group, sample_table$pairs, sample_table$tech_replicate, sep="_")
+      check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
+      if(length(unique(check_pairs)) != length(unique(check_techs))){
+      #if(length(unique(check_pairs)) != nrow(sample_table)){
+        stop("pairs column in sample_table contains pairings from same group OR
+             there is a problem with labelling of \"tech_replicate\" column.")
+      }
     }
-    if(as.numeric(min(summary(sample_table$pairs))) < 2)
-      stop("The sample_table provided contains pairs with less than two 
-           samples.")
+    # if no technical replicates are to be merged
+    if("tech_replicate"  %in% colnames(sample_table) == FALSE){
+      check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
+      if(length(unique(check_pairs)) != nrow(sample_table)){
+        stop("pairs column in sample_table contains pairings from same group.
+             Technical replication is not supported. If technical replicates are
+             present set \"technical_reps\" to \"TRUE\" and ensure a 
+             \"tech_replicate\" column is included in your \"sample_table\"")
+      }
+    }
+    if(as.numeric(min(summary(unique(sample_table$pairs)))) < 2)
+      stop("sample_table contains pairs with less than two samples")
   }
+  
   if(!is.null(bam_dir)){
     input_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
   }
@@ -292,6 +309,7 @@ if(is.null(summarized)){
     counts <- counts[!colnames(counts) %in% c("ID")]
     se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)))
     rowRanges(se) <- ebg
+    #metadata(se)$stats <- stats
     }
   
   if(!is.null(bam_dir)){
@@ -339,6 +357,7 @@ if(is.null(summarized)){
   metadata(se)$gene_coords <- genes(txdb)
   metadata(se)$sample_table <- sample_table
   #metadata(se)$consensusDE_parameters <-
+  metadata(se)$stats <- stats
   
   # name will be the filename, not including dir.
   # save se for future use
