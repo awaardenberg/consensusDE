@@ -170,6 +170,10 @@ if(paired == "paired" & ("pairs" %in% colnames(sample_table) == FALSE)){
        \"pairs\"")
 }
 
+if(verbose){
+  message("# [OPTIONS] Fitting models as: ", paired)
+}
+
 # set variables for plotting results
 plot_this <- FALSE
 write_this <- FALSE
