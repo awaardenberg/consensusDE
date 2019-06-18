@@ -1,8 +1,17 @@
-Changes in version 1.3.1 (2019-05-21)
+Changes in version 1.3.1 (2019-06-18)
 + fix buildSummarized bug in detection of minimum paired numbers
 + fix buildSummarized htseq with out of order rownames
 + add parameter to buildSummarized for technical_reps
 + technical_reps merges reads from technical replicates
++ change merged column name from p_max to p_intersect
++ change LogFC of merged results to mean(LogFC) of all methods
++ change AveExpr of merged results to mean(AveExpr) of all methods
++ addition of merged column name p_union (Union)
++ addition of merged column name LogFC_sd (Standard Deviation of FC)
++ updating plotting functions to add weight for LogFC_sd
++ added numbers for each category to legend of plots
++ disabled cooksCutoff for DESeq2 for compariability of all p-value rankings
++ update vignette
 
 Version 1.3.0 (BioC 3.9 update)
 
