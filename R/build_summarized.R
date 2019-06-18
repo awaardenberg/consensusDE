@@ -30,8 +30,9 @@
 #' Default = NULL
 #' @param technical_reps Are there technical replicates to merge counts? I.e. 
 #' are there multiple technical replicates run accross multiple lanes/sequencing
-#' runs. If "TRUE" sample names should be provided in a "tech_replicate" column 
-#' of the "sample_table". Options are "TRUE" or "FALSE". Default = "FALSE"
+#' runs. If "TRUE", unique sample names should be provided in a "tech_replicate"
+#' column of the "sample_table" for identification. Options are "TRUE" or 
+#' "FALSE". Default = "FALSE"
 #' @param map_reads Which features to count reads by. Options are "transcript", 
 #'  "exon" or "cds". This will invoke transcriptsBy(), exonsBy() or cdsBy() 
 #'  respectively. Default = "transcript"
@@ -39,10 +40,10 @@
 #' "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 #' Default = "Union"
 #' @param read_format Are the reads from single-end or paired-end data? Option
-#' are "paired" or "single". An option must be selected if htseq_dir is NULL. 
-#' Default = NULL
+#' are "paired" or "single". An option must be selected if htseq_dir is NULL and
+#' read are summarized from BAM files. Default = NULL
 #' @param ignore_strand Ignore strand when mapping reads? see "ignore_strand" in
-#' ?summarizeOverlaps for explanation. Default=FALSE
+#' ?summarizeOverlaps for explanation. Default = FALSE
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default = TRUE
@@ -54,7 +55,7 @@
 #' summarized experiment generated.
 #' @param filter Perform filtering of low count and missing data from the
 #' summarized experiment file? This uses default filtering via "filterByExpr".
-#' See ?filterByExpr for further information. Default=FALSE
+#' See ?filterByExpr for further information. Default = FALSE
 #' @param BamFileList_yiedsize If running into memory problems. Set the number
 #' of lines to an integer value. See "yieldSize" description in ?BamFileList for
 #'  an explanation.
