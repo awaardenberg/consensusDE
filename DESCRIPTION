@@ -6,8 +6,8 @@ Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform DE analysis using multiple 
     algorithms. It seeks consensus from multiple methods. Currently it supports 
-    "Voom", "EdgeR" and "DESeq". It uses RUV-seq (optional) to remove batch 
-    effects.
+    "Voom", "EdgeR" and "DESeq". It uses RUV-seq (optional) to remove batch/
+    unwanted sources of variation.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
@@ -20,7 +20,8 @@ biocViews:
     Transcriptomics,
     MultipleComparison,
     Clustering,
-    Sequencing
+    Sequencing,
+    Software
 Depends: 
     R (>= 3.5),
     BiocGenerics
@@ -30,6 +31,7 @@ Imports:
     BiocParallel,
     Biobase,
     Biostrings,
+    data.table,
     dendextend,
     DESeq2 (>= 1.20.0),
     EDASeq,
