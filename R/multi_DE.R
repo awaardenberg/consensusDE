@@ -90,7 +90,7 @@
 #' @importFrom AnnotationDbi mapIds keytypes columns
 #' @importFrom S4Vectors DataFrame metadata metadata<-
 #' @importFrom DESeq2 DESeqDataSet DESeq
-#' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
+#' @importFrom edgeR DGEList estimateDisp estimateGLMCommonDisp estimateGLMTagwiseDisp calcNormFactors glmFit glmLRT topTags
 #' @importFrom SummarizedExperiment colData<-
 #' @importFrom SummarizedExperiment assays colData
 #' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet
@@ -983,16 +983,15 @@ ruvr_correct <- function(se = NULL,
     ruv <- newSeqExpressionSet(assays(se)$counts,
             phenoData = data.frame(colData(se)),
             row.names = colnames(assays(se)$counts))
-    # normalise for library size (i.e. remove as an effect..)
-    ruv_norm <- betweenLaneNormalization(ruv, which=norm_method)
     # fit GLM for estimation of W_1
-    ruv_y <- DGEList(counts=counts(ruv_norm), group=ruv_norm$group)
+    ruv_y <- DGEList(counts=counts(ruv), group=ruv$group)
     ruv_y <- calcNormFactors(ruv_y, method="upperquartile")
-    ruv_y <- estimateDisp(ruv_y, design)
+    ruv_y <- estimateGLMCommonDisp(ruv_y, design)
+    ruv_y <- estimateGLMTagwiseDisp(ruv_y, design)
     fit_ruv <- glmFit(ruv_y, design)
     res_ruv <- stats::residuals(fit_ruv, type="deviance")
-    # using k=1, assuming only a single factor to remove
-    ruv_se <- RUVr(ruv_norm, rownames(ruv_norm), k=1, res_ruv)
+    # k=1, assuming a single factor
+    ruv_se <- RUVr(ruv, rownames(ruv), k=1, res_ruv)
     # build design and contrast matrix for refitting model
     design <- build_design(se=ruv_se,
                            pairing=pairing,
@@ -1055,8 +1054,8 @@ extract_gtf_attributes <- function(gtf_path, verbose){
   }
   # speed up
   gtf_attrib <- extract_attributes(gtf_attributes = gtf_table$attributes)
-  gtf_table_out <- data.frame("ID" = gtf_attrib$ID,
-                              "symbol" = gtf_attrib$geneid)
+  gtf_table_out <- data.frame("ID" = as.character(gtf_attrib$ID),
+                              "symbol" = as.character(gtf_attrib$geneid))
   if(verbose){
     message("# Cleaning up gtf attributes")
   }
