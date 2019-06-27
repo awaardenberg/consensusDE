@@ -216,7 +216,7 @@ all_pairs_airway_ruv <- multi_de_pairs(summarized = airway_filter,
                                        ruv_correct = TRUE)
 
 # access the summarized experiment (now including the residuals under the "W_1" column)
-colData(all_pairs_airway_ruv$summarized)
+all_pairs_airway_ruv$summarized@phenoData@data
 
 # view the results, now with RUV correction applied
 head(all_pairs_airway_ruv$merged[["untrt-trt"]])
