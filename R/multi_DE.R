@@ -22,8 +22,15 @@
 #' p-values. Options are: "holm", "hochberg", "hommel", "bonferroni", "BH",
 #' "BY", "fdr" or "none". See ?p.adjust.methods for a details description and
 #' references. Default = "BH"
-#' @param norm_method Method for normalisation (applies to QC results using 
-#' EDASeq). Options are: "median","upper","full". Default = "upper"
+#' @param norm_method Methods for normalisation. Options are: "EDASeq" or 
+#' "all_defaults". When "all_defaults" is selected, this will use all default 
+#' normalisation methods for differential expression, EDASeq for QC, and edgeR 
+#' "upperquantile" for determining RUV residuals (as per RUVSeq vignette). When 
+#' "EDASeq" is selected, this will use EDASeq normalisation throughout. EDASeq 
+#' normalisation method is selected using "EDASeq_method". Default = "EDASeq".
+#' @param EDASeq_method Method for normalisation (applies to QC results using 
+#' EDASeq and RUV when EDASeq is selected). Options are:"median","upper","full".
+#' Default = "upper"
 #' @param ruv_correct Remove Unwanted Variation (RUV)? See ?RUVr for
 #' description. Currently only RUVr, which used the residuals is enabled and one
 #' factor of variation is determined. If set to TRUE and a "plot_dir" is
@@ -91,9 +98,9 @@
 #' @importFrom S4Vectors DataFrame metadata metadata<-
 #' @importFrom DESeq2 DESeqDataSet DESeq
 #' @importFrom edgeR DGEList estimateDisp estimateGLMCommonDisp estimateGLMTagwiseDisp calcNormFactors glmFit glmLRT topTags
-#' @importFrom SummarizedExperiment colData<-
+#' @importFrom SummarizedExperiment colData<- assays<-
 #' @importFrom SummarizedExperiment assays colData
-#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet
+#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet normCounts<-
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
@@ -104,7 +111,8 @@ multi_de_pairs <- function(summarized = NULL,
                            paired = "unpaired",
                            intercept = NULL,
                            adjust_method = "BH",
-                           norm_method = "upper",
+                           EDASeq_method = "upper",
+                           norm_method = "EDASeq",
                            ruv_correct = FALSE,
                            ensembl_annotate = NULL,
                            gtf_annotate = NULL,
@@ -125,10 +133,16 @@ if((adjust_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
        \"hochberg\", \"hommel\", \"bonferroni\", \"BH\", \"BY\", \"fdr\" or
        \"none\"\n")
 }
-if((norm_method %in% c("median","upper","full")) == FALSE){
-  stop("norm_method must be one of the following methods: \"median\",
+if((EDASeq_method %in% c("median","upper","full")) == FALSE){
+  stop("EDASeq_method must be one of the following methods: \"median\",
        \"upper\", \"full\"")
 }
+if((norm_method %in% c("all_defaults","EDASeq")) == FALSE){
+  stop("norm_method must be one of the following methods: \"all_defaults\",
+       \"EDASeq\"")
+}
+  
+  
 if(is.null(plot_dir) && verbose == TRUE)
   message("No output directory provided for plots. Plots will not be generated")
 # check the database
@@ -253,7 +267,7 @@ if(plot_this == TRUE){
                        label = label))
 }
 # normalise for library size (i.e. remove as an effect..)
-se_qc_norm <- betweenLaneNormalization(se_qc, which=norm_method)
+se_qc_norm <- betweenLaneNormalization(se_qc, which=EDASeq_method)
 # output diagnostic plots:
 if(plot_this == TRUE){
   if(verbose){
@@ -289,7 +303,7 @@ summarized_ruv <- NULL
 
 if(ruv_correct==TRUE){
   if(verbose){
-    message("# [OPTIONS] RUV batch correction has been selected")
+    message("# [OPTIONS] RUV correction has been selected")
   }
   # determine the intercept from the base file
   ruv_se <- ruvr_correct(se = summarized,
@@ -298,6 +312,7 @@ if(ruv_correct==TRUE){
                          pairing = paired,
                          intercept = intercept,
                          norm_method = norm_method,
+                         EDASeq_method = EDASeq_method,
                          plot_this = plot_this,
                          write_this = write_this,
                          verbose = verbose,
@@ -326,15 +341,27 @@ if(ruv_correct==TRUE){
 if(verbose){
   message("# Performing DEseq2 analyses")
 }
-deseq_res <- deseq_wrapper(summarized, design, contrast_matrix)
+deseq_res <- deseq_wrapper(summarized, 
+                           design, 
+                           contrast_matrix,
+                           norm_method = norm_method,
+                           EDASeq_method = EDASeq_method)
 if(verbose){
   message("# Performing EdgeR analyses")
 }
-edger_res <- edger_wrapper(summarized, design, contrast_matrix)
+edger_res <- edger_wrapper(summarized, 
+                           design, 
+                           contrast_matrix,
+                           norm_method = norm_method,
+                           EDASeq_method = EDASeq_method)
 if(verbose){
   message("# Performing voom analyses")
 }
-voom_res <- voom_wrapper(summarized, design, contrast_matrix)
+voom_res <- voom_wrapper(summarized, 
+                         design, 
+                         contrast_matrix,
+                         norm_method = norm_method,
+                         EDASeq_method = EDASeq_method)
 
 #########################################################
 # Merge results and report all comparisons done as well
@@ -485,6 +512,7 @@ if(!is.null(output_voom) |
                                     "deseq" = deseq_res,
                                     "edger" = edger_res,
                                     "voom" = voom_res),
+                      EDASeq_method = EDASeq_method,
                       norm_method = norm_method,
                       voom_dir = output_voom,
                       edger_dir = output_edger,
@@ -520,6 +548,7 @@ if(ruv_correct == FALSE){
 # these are seperate commands for writing tables:
 write_table_wrapper <- function(summarized = NULL,
                                 summarized_ruv = NULL,
+                                EDASeq_method = EDASeq_method,
                                 norm_method = norm_method,
                                 merged = NULL,
                                 voom_dir = NULL,
@@ -540,7 +569,7 @@ se_new <- newSeqExpressionSet(assays(summarized)$counts,
                               phenoData = data.frame(colData(summarized)),
                               row_names=colnames(assays(summarized)$counts))
 # normalise for library size
-se_norm <- betweenLaneNormalization(se_new, which=norm_method)
+se_norm <- betweenLaneNormalization(se_new, which=EDASeq_method)
 norm_count <- normCounts(se_norm)
 cpm_norm <- cpm(normCounts(se_norm))
 cpm_norm_log <- cpm(normCounts(se_norm), log=TRUE)
@@ -742,7 +771,7 @@ table_means <- function(count_matrix, matrix_names){
                                     %in% unique(colnames(count_matrix))[i]])))
     colnames(mean_counts) <- c("ID", paste(unique(colnames(count_matrix)),
                                            "_mean", sep=""))
-    return(mean_counts)
+return(mean_counts)
 }
 
 # function to automate contrast matrix creation of all pairs
@@ -877,10 +906,28 @@ return(data_in)
 }
 
 # function for calling Voom analysis given se, design and contrast_matrix
-voom_wrapper <- function(se, design, contrast_matrix){
-    y <- DGEList(counts = assays(se)$counts,
-                 group = se$group)
-    y <- calcNormFactors(y)
+voom_wrapper <- function(se, 
+                         design, 
+                         contrast_matrix,
+                         norm_method,
+                         EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      y <- DGEList(counts = assays(se)$counts,
+                   group = se$group)
+      y <- calcNormFactors(y)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      
+      y <- DGEList(counts=normCounts(y), group=y$group)
+      y <- calcNormFactors(y, method="none")
+    }
+
     v <- voom(y, design = design)
     fit_voom <- lmFit(v, design = design)
     # fitting with user supplied contrast_matrix for each comparison
@@ -908,11 +955,27 @@ voom_wrapper <- function(se, design, contrast_matrix){
 }
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
-edger_wrapper <- function(se, design, contrast_matrix){
-    y <- DGEList(counts=assays(se)$counts,
-    group=se$group)
-    # normalise accross groups
-    y <- calcNormFactors(y)
+edger_wrapper <- function(se, 
+                          design, 
+                          contrast_matrix,
+                          norm_method,
+                          EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      y <- DGEList(counts = assays(se)$counts,
+                   group = se$group)
+      y <- calcNormFactors(y)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      
+      y <- DGEList(counts=normCounts(y), group=y$group)
+      y <- calcNormFactors(y, method="none")
+    }
     # NB. there are different ways of estimating dispersion
     y_disp <- estimateDisp(y, design)
     fit_edger <- glmFit(y_disp, design)
@@ -935,9 +998,33 @@ edger_wrapper <- function(se, design, contrast_matrix){
 }
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
-deseq_wrapper <- function(se, design, contrast_matrix){
-    dds <- DESeqDataSet(se, design = design)
-    dds <- DESeq(dds)
+deseq_wrapper <- function(se, 
+                          design, 
+                          contrast_matrix,
+                          norm_method,
+                          EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      dds <- DESeqDataSet(se, design = design)
+      # this is automatically performed here:
+      # dds <- estimateSizeFactors(dds)
+      dds <- DESeq(dds)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      # put normalised counts back into se
+      assays(se)$counts <- normCounts(y) 
+      # put in dds
+      dds <- DESeqDataSet(se, design = design)
+      dds <- DESeq(dds)
+      # set size factors to 1
+      sizeFactors(dds) <- rep(1, length(sizeFactors(dds)))
+    }
+  
     # extract all if the contrasts and return all results
     all_contrasts <- lapply(seq_len(ncol(contrast_matrix)),
     function(i) DEseq_contrasts(contrast_matrix, i))
@@ -958,7 +1045,8 @@ deseq_wrapper <- function(se, design, contrast_matrix){
     "PValue"=all_results[[i]]$pvalue,
     row.names=rownames(all_results[[i]])))
     names(short_results) <- names(all_results)
-    return(list("short_results"=short_results,
+    
+return(list("short_results"=short_results,
     "full_results"=all_results,
     "fitted"=dds,
     "contrasts"=contrast_matrix))
@@ -971,7 +1059,9 @@ deseq_wrapper <- function(se, design, contrast_matrix){
 ruvr_correct <- function(se = NULL,
                          design = NULL,
                          pairing = "unpaired",
+                         EDASeq_method = EDASeq_method,
                          norm_method = norm_method,
+                         edgeR_norm = "upperquartile",
                          intercept = NULL,
                          plot_this = FALSE,
                          write_this = FALSE,
@@ -983,20 +1073,36 @@ ruvr_correct <- function(se = NULL,
     ruv <- newSeqExpressionSet(assays(se)$counts,
             phenoData = data.frame(colData(se)),
             row.names = colnames(assays(se)$counts))
-    # fit GLM for estimation of W_1
-    ruv_y <- DGEList(counts=counts(ruv), group=ruv$group)
-    ruv_y <- calcNormFactors(ruv_y, method="upperquartile")
+    if(norm_method == "EDASeq"){
+      # normalise for library size
+      ruv <- betweenLaneNormalization(ruv, which=EDASeq_method)
+      ruv_y <- DGEList(counts=normCounts(ruv), group=ruv$group)
+      ruv_y <- calcNormFactors(ruv_y, method="none")
+    }
+    if(norm_method == "all_defaults"){
+      ruv_y <- DGEList(counts=counts(ruv), group=ruv$group)
+      ruv_y <- calcNormFactors(ruv_y, method=edgeR_norm)
+      
+    }
+    # update ruv norm counts depending on approach
+    normCounts(ruv) <- ruv_y$counts
+    
+    # estimate dispersion parameters
     ruv_y <- estimateGLMCommonDisp(ruv_y, design)
     ruv_y <- estimateGLMTagwiseDisp(ruv_y, design)
+    # fit
     fit_ruv <- glmFit(ruv_y, design)
+    # obtain residuals
     res_ruv <- stats::residuals(fit_ruv, type="deviance")
-    # k=1, assuming a single factor
+    # k=1, assuming a single factor, refit with residuals
     ruv_se <- RUVr(ruv, rownames(ruv), k=1, res_ruv)
+    
     # build design and contrast matrix for refitting model
     design <- build_design(se=ruv_se,
                            pairing=pairing,
                            intercept=intercept,
                            ruv="W_1")
+    
     # output RLE and PCA plots
     if(plot_this == TRUE){
         if(verbose){
@@ -1028,9 +1134,14 @@ ruvr_correct <- function(se = NULL,
     # update colData in the SE to include the W_1
     colData(se) <- S4Vectors::DataFrame(design$table)
     colnames(se) <- colData(se)$file
+    
+    return_ruv_se <- ruv_se
+    # put normalised counts back into se
+    # assays(return_ruv_se)$normCounts <- normCounts(ruv_se) 
+
 return(list("se" = se, 
             "design" = design,
-            "ruv_summarized" = ruv_se))
+            "ruv_summarized" = return_ruv_se))
 }
 
 extract_gtf_attributes <- function(gtf_path, verbose){

@@ -5,11 +5,12 @@
 \title{Batch - multiDE analysis of many comparisons}
 \usage{
 multi_de_pairs(summarized = NULL, paired = "unpaired",
-  intercept = NULL, adjust_method = "BH", norm_method = "upper",
-  ruv_correct = FALSE, ensembl_annotate = NULL, gtf_annotate = NULL,
-  plot_dir = NULL, output_voom = NULL, output_edger = NULL,
-  output_deseq = NULL, output_combined = NULL, verbose = FALSE,
-  legend = TRUE, label = TRUE)
+  intercept = NULL, adjust_method = "BH", EDASeq_method = "upper",
+  norm_method = "EDASeq", ruv_correct = FALSE,
+  ensembl_annotate = NULL, gtf_annotate = NULL, plot_dir = NULL,
+  output_voom = NULL, output_edger = NULL, output_deseq = NULL,
+  output_combined = NULL, verbose = FALSE, legend = TRUE,
+  label = TRUE)
 }
 \arguments{
 \item{summarized}{A "RangedSummarizedExperiment" object with included groups
@@ -32,8 +33,16 @@ p-values. Options are: "holm", "hochberg", "hommel", "bonferroni", "BH",
 "BY", "fdr" or "none". See ?p.adjust.methods for a details description and
 references. Default = "BH"}
 
-\item{norm_method}{Method for normalisation (applies to QC results using 
-EDASeq). Options are: "median","upper","full". Default = "upper"}
+\item{EDASeq_method}{Method for normalisation (applies to QC results using 
+EDASeq and RUV when EDASeq is selected). Options are:"median","upper","full".
+Default = "upper"}
+
+\item{norm_method}{Methods for normalisation. Options are: "EDASeq" or 
+"all_defaults". When "all_defaults" is selected, this will use all default 
+normalisation methods for differential expression, EDASeq for QC, and edgeR 
+"upperquantile" for determining RUV residuals (as per RUVSeq vignette). When 
+"EDASeq" is selected, this will use EDASeq normalisation throughout. EDASeq 
+normalisation method is selected using "EDASeq_method". Default = "EDASeq".}
 
 \item{ruv_correct}{Remove Unwanted Variation (RUV)? See ?RUVr for
 description. Currently only RUVr, which used the residuals is enabled and one
