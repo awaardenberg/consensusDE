@@ -1,13 +1,13 @@
 Package: consensusDE
 Type: Package
 Title: RNA-seq analysis using multiple algorithms 
-Version: 1.3.2
+Version: 1.3.3
 Author: Ashley J. Waardenberg
 Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
 Description: This package allows users to perform DE analysis using multiple 
     algorithms. It seeks consensus from multiple methods. Currently it supports 
-    "Voom", "EdgeR" and "DESeq". It uses RUV-seq (optional) to remove batch/
-    unwanted sources of variation.
+    "Voom", "EdgeR" and "DESeq". It uses RUV-seq (optional) to remove unwanted 
+    sources of variation.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
