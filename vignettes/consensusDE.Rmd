@@ -25,18 +25,18 @@ vignette: >
 
 # Introduction to consensusDE
 
-consensusDE aims to make differential expression (DE) analysis, with reporting of significance scores from multiple methods ***easy***. It implements wrappers for Voom, DEseq2 and EdgeR and reports differential expression results seperately for each algorithm, as well as merging the results into a single table for determining ***consensus***. The results of the merged table, are ordered by the summed ranks of the p-values for each algorithm and the intersect at minimum p-value threshols accross all methods is provided as the p_max (see below).
+consensusDE aims to make differential expression (DE) analysis, with reporting of significance scores from multiple methods, with and without removal of unwanted variation (RUV) ***easy***. It implements voom/limma, DESeq2 and edgeR and reports differential expression results seperately for each algorithm, as well as merging the results into a single table for determining ***consensus***. The results of the merged table, are ordered by the summed ranks of p-values for each algorithm, the intersect at minimum p-value thresholds accross all methods is provided as the p_intersect, in addition to a number of statistics (see below).
 
 consensusDE is simplified into two functions:
 
 + **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files or htseq count files) against a transcriptome
 + **```multi_de_pairs()```** perform DE analysis (all possible pairwise comparisons)
 
-Below, we demonstrate the core functionality of consensusDE as well as how to plot results using the ```diag_plots``` function.
+Below the core functionality of consensusDE as well as how to plot results using the ```diag_plots``` function.
 
 # consensusDE examples
 
-Begin by first installing and then loading the ```consensusDE``` library. To illustrate functionality of ```consensusDE```, we will utilise data from the ```airway``` and annotation libraries as follows. Begin by installing and attaching data from these libraries as follows:
+Begin by first installing and loading the ```consensusDE``` library. To illustrate functionality of ```consensusDE```, we will utilise RNA-seq data from the ```airway``` and annotation libraries as follows. Begin by installing and attaching data from these libraries as follows:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # load consensusDE
@@ -53,7 +53,7 @@ data("airway")
 
 # Building a summarized experiment
 
-A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam/files (more below on format), 2) a directory of where to locate the bam/htseq files and 3) a transcript database to map the reads to (either a gtf file or txdb). Below we will use bam files attached to this package (from GenomicAlignments) as an example:
+A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam/htseq files (more below on format), 2) the directory of where to locate files and 3) a transcript database to map the reads to (either a gtf file or txdb). Below we will use bam files (from GenomicAlignments) as an example for creating a summarized experiment:
 
 ```{r echo=TRUE}
 # build a design table that lists the files and their grouping
@@ -89,7 +89,7 @@ summarized_dm3 <- buildSummarized(sample_table = sample_table,
 
 ```
 
-This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save the summarized experiment externally, for future use, specify the path to save the summarized experiment using ```output_log``` To see details of all parameters see ```?buildSummarized```.
+This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save a summarized experiment externally, for future use, specify a path to save the summarized experiment using ```output_log```. To see details of all parameters see ```?buildSummarized```.
 
 Overview of the summarized experiment:
 ```{r echo=TRUE}
@@ -108,10 +108,10 @@ Sometimes it will be convenient to first build a ```txdb``` object and then pass
 
 # Performing Differential Expresssion
 
-For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarized meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
+For differential expression (DE) analysis we will use the ```airway``` RNA-seq data for demonstration. See ```?airway``` for more details about this experiment. NOTE: the summarized meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-# for compatability, add "group" and "file" columns
+# for compatability for DE analysis, add "group" and "file" columns
 colData(airway)$group <- colData(airway)$dex
 colData(airway)$file <- rownames(colData(airway))
 
@@ -246,6 +246,10 @@ The design matrix can be retrieved as follows (from e.g. the voom model fit)
 ```{r echo=TRUE, message=FALSE}
 all_pairs_airway_paired$voom$fitted[[1]]$design
 ```
+
+# Normalisation options
+
+consensusDE currently implements two main normalisation approaches in ```multi_de_pairs()```. These are specified with the ```norm_method``` parameter, where options are: ```EDASeq``` or ```all_defaults```. As per the parameter description, when ```all_defaults``` is selected, this will use default normalisation methods for DE, EDASeq for QC (with control via ```EDASeq_method```), and edgeR "upperquantile" for determining RUV residuals (as per RUVSeq vignette). However, when ```EDASeq``` is selected, this will use EDASeq normalisation and the specified ```EDASeq_method``` throughout, for RUV, edgeR, DESeq2 and voom/limma. Using the ```EDASeq``` allows for a standard normalisation approach to be used throughout, whereas ```all_defaults```, allows for variation of normalisation approach to also be modelled into the final merged results table.
 
 # Plotting functions
 
