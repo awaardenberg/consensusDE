@@ -5,10 +5,12 @@
 \title{Batch - multiDE analysis of many comparisons}
 \usage{
 multi_de_pairs(summarized = NULL, paired = "unpaired",
-  intercept = NULL, adjust_method = "BH", ruv_correct = FALSE,
-  ensembl_annotate = NULL, plot_dir = NULL, output_voom = NULL,
-  output_edger = NULL, output_deseq = NULL, output_combined = NULL,
-  verbose = FALSE, legend = TRUE, label = TRUE)
+  intercept = NULL, adjust_method = "BH", EDASeq_method = "upper",
+  norm_method = "EDASeq", ruv_correct = FALSE,
+  ensembl_annotate = NULL, gtf_annotate = NULL, plot_dir = NULL,
+  output_voom = NULL, output_edger = NULL, output_deseq = NULL,
+  output_combined = NULL, verbose = FALSE, legend = TRUE,
+  label = TRUE)
 }
 \arguments{
 \item{summarized}{A "RangedSummarizedExperiment" object with included groups
@@ -23,27 +25,44 @@ summarized$pairs). Options are "unpaired" or "paired". Default="unpaired"}
 
 \item{intercept}{Optional ability to set the base term for fitting the model.
 This is not necessary as all pairs are computed automatically. The base
-term, if set, must match the name of group in "summarized$group". Default =
-NULL}
+term, if set, must match the name of s group in "summarized$group". Default 
+= NULL}
 
 \item{adjust_method}{Method used for multiple comparison adjustment of
 p-values. Options are: "holm", "hochberg", "hommel", "bonferroni", "BH",
 "BY", "fdr" or "none". See ?p.adjust.methods for a details description and
 references. Default = "BH"}
 
+\item{EDASeq_method}{Method for normalisation (applies to QC results using 
+EDASeq and RUV when EDASeq is selected). Options are:"median","upper","full".
+Default = "upper"}
+
+\item{norm_method}{Methods for normalisation. Options are: "EDASeq" or 
+"all_defaults". When "all_defaults" is selected, this will use all default 
+normalisation methods for differential expression, EDASeq for QC, and edgeR 
+"upperquantile" for determining RUV residuals (as per RUVSeq vignette). When 
+"EDASeq" is selected, this will use EDASeq normalisation throughout. EDASeq 
+normalisation method is selected using "EDASeq_method". Default = "EDASeq".}
+
 \item{ruv_correct}{Remove Unwanted Variation (RUV)? See ?RUVr for
 description. Currently only RUVr, which used the residuals is enabled and one
- factor of variation is determined. If set to TRUE and a "plot_dir" is
- provided, additional plots after RUV correction and the RUV residuals will
-  be reported. Residuals are obtained through fitting a generalised linear
-  model (GLM) using EdgeR. Residuals are then incorporated into the
-  SummarizedExperiment object and models for DE analysis. Options = TRUE,
-  FALSE. Default = FALSE.}
+factor of variation is determined. If set to TRUE and a "plot_dir" is
+provided, additional plots after RUV correction and the RUV residuals will
+be reported. Residuals are obtained through fitting a generalised linear
+model (GLM) using EdgeR. Residuals are then incorporated into the
+SummarizedExperiment object and all models for DE analysis. Options = TRUE,
+FALSE. Default = FALSE.}
 
 \item{ensembl_annotate}{If the dataset has been mapped to ensembl transcript
 identifiers, obtain additional annotation of the ensembl transcripts. A R 
 Genome Wide Annotation object e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for
- human must be provided. Default = NULL}
+human must be provided. Default = NULL}
+
+\item{gtf_annotate}{Full path to a gtf file describing the transcripts. If 
+provided will obtain gene symbols from gtf file. If a ensembl_annotate object
+is also provided, this will extract annotations based on the symbols 
+extracted from the GTF file. It is recommended to provide both a gtf file and
+a tx_db for better annotation results. Default = NULL}
 
 \item{plot_dir}{Full path to directory for output of plots (pdf files). See
 ?diag_plots for more details. Default = NULL}

@@ -1,7 +1,7 @@
 ---
 title: 'consensusDE: DE analysis using multiple algorithms'
 author: "Ashley J. Waardenberg"
-date: 'Last modified: 2019-01-08. Compiled: `r Sys.Date()`'
+date: 'Last modified: 2019-04-25. Compiled: `r Sys.Date()`'
 output:
   html_document:
     highlight: tango
@@ -25,33 +25,35 @@ vignette: >
 
 # Introduction to consensusDE
 
-consensusDE aims to make differential expression (DE) analysis, with reporting of significance scores from multiple methods ***easy***. It implements wrappers for Voom, DEseq2 and EdgeR and reports differential expression results seperately for each algorithm, as well as merging the results into a single table for determining ***consensus***. The results of the merged table, are ordered by the summed ranks of the p-values for each algorithm and the intersect at minimum p-value threshols accross all methods is provided as the p_max (see below).
+consensusDE aims to make differential expression (DE) analysis, with reporting of significance scores from multiple methods, with and without removal of unwanted variation (RUV) ***easy***. It implements voom/limma, DESeq2 and edgeR and reports differential expression results seperately for each algorithm, as well as merging the results into a single table for determining ***consensus***. The results of the merged table, are ordered by the summed ranks of p-values for each algorithm, the intersect at minimum p-value thresholds accross all methods is provided as the p_intersect, in addition to a number of statistics (see below).
 
 consensusDE is simplified into two functions:
 
-+ **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files) against a transcriptome
++ **```buildSummarized()```** generate a summarized experiment that counts reads mapped (from bam files or htseq count files) against a transcriptome
 + **```multi_de_pairs()```** perform DE analysis (all possible pairwise comparisons)
 
-Below, we demonstrate the core functionality of consensusDE as well as how to plot results from obtained results using the ```diag_plots``` function.
+Below the core functionality of consensusDE as well as how to plot results using the ```diag_plots``` function.
 
 # consensusDE examples
 
-Begin by first installing and then loading the ```consensusDE``` library. To illustrate functionality of ```consensusDE```, we will utilise data from the ```airway``` and annotation libraries as follows. Begin by installing and attaching data from these libraries as follows:
+Begin by first installing and loading the ```consensusDE``` library. To illustrate functionality of ```consensusDE```, we will utilise RNA-seq data from the ```airway``` and annotation libraries as follows. Begin by installing and attaching data from these libraries as follows:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # load consensusDE
 library(consensusDE)
 
-# load airway and dm3 transcript database for example annotation
+# load airway and dm3/Hs transcript database for example annotation
 library(airway)
 library(TxDb.Dmelanogaster.UCSC.dm3.ensGene)
+library(EnsDb.Hsapiens.v86)
+library(org.Hs.eg.db)
 
 data("airway")
 ```
 
 # Building a summarized experiment
 
-A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam files (more below on format), 2) a directory of where to locate the bam files and 3) a transcript database to map the reads to (either a gtf file or txdb). We will use bam files attached to this package (from GenomicAlignments) as an example:
+A summarized experiment is an object that stores all relevant information for performing differential expression analysis. ```buildSummarized()``` allows users to build a summarized experiment object by simply providing 1) a table of bam/htseq files (more below on format), 2) the directory of where to locate files and 3) a transcript database to map the reads to (either a gtf file or txdb). Below we will use bam files (from GenomicAlignments) as an example for creating a summarized experiment:
 
 ```{r echo=TRUE}
 # build a design table that lists the files and their grouping
@@ -84,9 +86,10 @@ summarized_dm3 <- buildSummarized(sample_table = sample_table,
                                   tx_db = TxDb.Dmelanogaster.UCSC.dm3.ensGene,
                                   read_format = "paired",
                                   force_build = TRUE)
+
 ```
 
-This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save the summarized experiment externally, for future use, specify the path to save the summarized experiment using ```output_log``` To see details of all parameters see ```?buildSummarized```.
+This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save a summarized experiment externally, for future use, specify a path to save the summarized experiment using ```output_log```. To see details of all parameters see ```?buildSummarized```.
 
 Overview of the summarized experiment:
 ```{r echo=TRUE}
@@ -105,10 +108,10 @@ Sometimes it will be convenient to first build a ```txdb``` object and then pass
 
 # Performing Differential Expresssion
 
-For differential expression (DE) analysis we will use the ```airway``` data for demonstration. See ```?airway``` for more details for this experiment. NOTE: the summarized meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
+For differential expression (DE) analysis we will use the ```airway``` RNA-seq data for demonstration. See ```?airway``` for more details about this experiment. NOTE: the summarized meta-data must include the columns "group" and "file" to build the correct models. For illustration, we sample 1000 genes from this dataset.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-# for compatability, add "group" and "file" columns
+# for compatability for DE analysis, add "group" and "file" columns
 colData(airway)$group <- colData(airway)$dex
 colData(airway)$file <- rownames(colData(airway))
 
@@ -127,11 +130,12 @@ all_pairs_airway <- multi_de_pairs(summarized = airway_filter,
 
 ```
 
-Running ```multi_de_pairs()``` will perform DE analysis on all possible pairs of "groups" and save these results as a simple list of "merged" - being the merged results of "deseq", "voom" and "edger" into one table, as well as the latter three as objects independently. The data frame is sorted by the ```rank_sum```. The following columns are now included:
+Running ```multi_de_pairs()``` will perform DE analysis on all possible pairs of "groups" and save these results as a simple list of "merged" - being the merged results of "deseq", "voom" and "edger" into one table, as well as the latter three as objects independently. The data frame is sorted by the ```rank_sum```. The following columns are included:
 
 * ```ID``` - Identifier
-* ```AveExpr``` - Average Expression (taken from EdgeR)
-* ```LogFC``` - Log2 Fold-Change, also known as a log-ratio (taken from EdgeR)
+* ```AveExpr``` - Average Expression (average of edgeR, DESeq2 and voom)
+* ```LogFC``` - Log2 Fold-Change, also known as a log-ratio (average of edgeR, DESeq2 and voom)
+* ```LogFC_sd``` - Log2 Fold-Change standard deviation of LogFC (average)
 * ```edger_adj_p``` - EdgeR p-value adjusted for multiple hypotheses
 * ```deseq_adj_p``` - DESeq2 p-value adjusted for multiple hypotheses
 * ```voom_adj_p``` - Limma/voom p-value adjusted for multiple hypotheses
@@ -139,9 +143,10 @@ Running ```multi_de_pairs()``` will perform DE analysis on all possible pairs of
 * ```deseq_rank``` - rank of the p-value obtained by DESeq2 
 * ```voom_rank``` - rank of the p-value obtained by Limma/voom 
 * ```rank_sum``` - sum of the ranks from edger_rank, voom_rank, rank_sum
-* ```p_max``` - the largest p-value observed from all methods tested.
-    * This represents the intersect when a threshold is set on the p_max column
-
+* ```p_intersect``` - the largest p-value observed from all methods tested.
+    * This represents the intersect when a threshold is set on the p_intersect column
+* ```p_union``` - the smallest p-value observed from all methods tested.
+    * This represents the union when a threshold is set on the p_union column
 To access the merged results:
 
 ```{r echo=TRUE}
@@ -155,14 +160,23 @@ head(all_pairs_airway$merged[["untrt-trt"]])
 
 ## Annotating DE results
 
-It is often useful to add additional annotated information to the output tables. This can be acheived by providing a database for annotations via ```ensembl_annotate```. Annotations needs to be a Genome Wide Annotation object, e.g. ```org.Mm.eg.db``` for mouse or ```org.Hs.eg.db``` for human from BioConductor. For example, to install the database for the mouse annotation, go to http://bioconductor.org/packages/org.Mm.eg.db and follow the instructions. Ensure that after installing the database package that the library is loaded using ```library(org.Mm.eg.db)```. When running, "'select()' returned 1:many mapping between keys and columns" will appear on the command line. This is the result of multiple mapped transcript ID to Annotations. Only the first annotation is reported. See ```?multi_de_pairs``` for additional documentation.
+It is *recommended* to annotate with a GTF file byt providing the full path of a gtf file to the gtf_annotate parameter, in combination with a tx_db. If no tx_db is provided and the gtf path is provided, only gene symbol annotations will be performed.
+
+Currently only ENSEMBL annotations are supported with the tx_db option.
+
+It is often useful to add additional annotated information to the output tables. This can be achieved by providing a database for annotations via ```ensembl_annotate```. Annotations needs to be a Genome Wide Annotation object, e.g. ```org.Mm.eg.db``` for mouse or ```org.Hs.eg.db``` for human from BioConductor. For example, to install the database for the mouse annotation, go to http://bioconductor.org/packages/org.Mm.eg.db and follow the instructions. Ensure that after installing the database package that the library is loaded using ```library(org.Mm.eg.db)```. When running, "'select()' returned 1:many mapping between keys and columns" will appear on the command line. This is the result of multiple mapped transcript ID to Annotations. Only the first annotation is reported. See ```?multi_de_pairs``` for additional documentation.
 
 An example of annotating the above filtered airway data is provided below:
 
 ```{r echo=TRUE, message=FALSE}
 # first ensure annotation database in installed
-# load annotation library:
-library(org.Hs.eg.db)
+#library(org.Hs.eg.db)
+#library(EnsDb.Hsapiens.v86)
+
+# Preloaded summarized file did not contain meta-data of the tx_db. This is important if you want to extract chromosome coordinates. This can be easily updated by rerunning buildSummarized with the tx_db of choice.
+airway_filter <- buildSummarized(summarized = airway_filter,
+                                 tx_db = EnsDb.Hsapiens.v86,
+                                 filter = FALSE)
 
 # call multi_de_pairs(), 
 # set ensembl_annotate argument to org.Hs.eg.db
@@ -174,6 +188,17 @@ all_pairs_airway <- multi_de_pairs(summarized = airway_filter,
 # to access data of a particular comparison
 head(all_pairs_airway$merged[["untrt-trt"]])
 ```
+The following additional columns will now be present:
+
+* ```genename``` - extend gene names (e.g. alpha-L-fucosidase 2)
+* ```symbol``` - gene symbol (e.g. FUCA2)
+* ```kegg``` - kegg pathway identifier (e.g. 00511)
+
+If metadata for the transcript database used to build the summarized experiment was included, the following annotations will also be included:
+
+* ```coords``` - chromosomal coordinates (e.g. chr6:143494811-143511690)
+* ```strand``` - strand transcript is on (i.e. + or -)
+* ```width``` - transcript width in base pairs (bp) (transcript start to end) (e.g. 16880 bp)
 
 ## Writing tables to an output directory
 
@@ -191,7 +216,7 @@ all_pairs_airway_ruv <- multi_de_pairs(summarized = airway_filter,
                                        ruv_correct = TRUE)
 
 # access the summarized experiment (now including the residuals under the "W_1" column)
-colData(all_pairs_airway_ruv$summarized)
+all_pairs_airway_ruv$summarized@phenoData@data
 
 # view the results, now with RUV correction applied
 head(all_pairs_airway_ruv$merged[["untrt-trt"]])
@@ -221,6 +246,10 @@ The design matrix can be retrieved as follows (from e.g. the voom model fit)
 ```{r echo=TRUE, message=FALSE}
 all_pairs_airway_paired$voom$fitted[[1]]$design
 ```
+
+# Normalisation options
+
+consensusDE currently implements two main normalisation approaches in ```multi_de_pairs()```. These are specified with the ```norm_method``` parameter, where options are: ```EDASeq``` or ```all_defaults```. As per the parameter description, when ```all_defaults``` is selected, this will use default normalisation methods for DE, EDASeq for QC (with control via ```EDASeq_method```), and edgeR "upperquantile" for determining RUV residuals (as per RUVSeq vignette). However, when ```EDASeq``` is selected, this will use EDASeq normalisation and the specified ```EDASeq_method``` throughout, for RUV, edgeR, DESeq2 and voom/limma. Using the ```EDASeq``` allows for a standard normalisation approach to be used throughout, whereas ```all_defaults```, allows for variation of normalisation approach to also be modelled into the final merged results table.
 
 # Plotting functions
 

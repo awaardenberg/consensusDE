@@ -4,22 +4,31 @@
 \alias{buildSummarized}
 \title{Generate summarized Read File for DE analyses}
 \usage{
-buildSummarized(sample_table = NULL, bam_dir = NULL, gtf = NULL,
-  tx_db = NULL, mapping_mode = "Union", read_format = NULL,
-  ignore_strand = FALSE, fragments = TRUE, summarized = NULL,
-  output_log = NULL, filter = FALSE,
-  BamFileList_yiedsize = NA_integer_, n_cores = 1,
+buildSummarized(sample_table = NULL, bam_dir = NULL,
+  htseq_dir = NULL, gtf = NULL, tx_db = NULL,
+  technical_reps = FALSE, map_reads = "transcript",
+  mapping_mode = "Union", read_format = NULL, ignore_strand = FALSE,
+  fragments = TRUE, summarized = NULL, output_log = NULL,
+  filter = FALSE, BamFileList_yiedsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{sample_table}{A data.frame describing samples. For paired mode it must
-contain 3 columns, with the names "file", "group" and "pairs". The filename
-is the name in the directory supplied with the "bam_dir" parameter below.
-This is not required if an existing summarized file is provided. Default=NULL}
+at least 2 columns, "file", "group", and option additional columns, "pairs"
+and "tech_replicate" for describing sample pairing and instances of technical
+replicates. The filename "file" must correspong to the name of the file in 
+the directory supplied with the "bam_dir" parameter below - or ar error will
+be reported and buildSummarized will halt. This is not required if an 
+existing summarized file is provided. Default = NULL}
 
 \item{bam_dir}{Full path to location of bam files listed in the "file" column
 in the sample_table provided above. This is not required if an existing
-summarized file is provided. Default=NULL}
+summarized file is provided. Default = NULL}
+
+\item{htseq_dir}{Full path to location of htseq files listed in the "file" 
+column in the sample_table described above. This is not required if an 
+existing summarized file is provided. Files must end in ".txt". Default = 
+NULL}
 
 \item{gtf}{Full path to a gtf file describing the transcript coordinates to
 map the RNA-seq reads to. GTF file is not required if providing a
@@ -29,15 +38,26 @@ buildSummarized() OR a tx_db object (below). Default = NULL}
 \item{tx_db}{An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 Default = NULL}
 
+\item{technical_reps}{Are there technical replicates to merge counts? I.e. 
+are there multiple technical replicates run accross multiple lanes/sequencing
+runs. If "TRUE", unique sample names should be provided in a "tech_replicate"
+column of the "sample_table" for identification. Options are "TRUE" or 
+"FALSE". Default = "FALSE"}
+
+\item{map_reads}{Which features to count reads by. Options are "transcript", 
+"exon" or "cds". This will invoke transcriptsBy(), exonsBy() or cdsBy() 
+respectively. Default = "transcript"}
+
 \item{mapping_mode}{Options are "Union", "IntersectionStrict" and
 "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 Default = "Union"}
 
 \item{read_format}{Are the reads from single-end or paired-end data? Option
-are "paired" or "single". An option must be selected. Default = NULL}
+are "paired" or "single". An option must be selected if htseq_dir is NULL and
+read are summarized from BAM files. Default = NULL}
 
 \item{ignore_strand}{Ignore strand when mapping reads? see "ignore_strand" in
-?summarizeOverlaps for explanation. Default=FALSE}
+?summarizeOverlaps for explanation. Default = FALSE}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
@@ -53,7 +73,7 @@ summarized experiment generated.}
 
 \item{filter}{Perform filtering of low count and missing data from the
 summarized experiment file? This uses default filtering via "filterByExpr".
-See ?filterByExpr for further information. Default=FALSE}
+See ?filterByExpr for further information. Default = FALSE}
 
 \item{BamFileList_yiedsize}{If running into memory problems. Set the number
 of lines to an integer value. See "yieldSize" description in ?BamFileList for
@@ -73,11 +93,13 @@ buildSummarized will halt. Default = FALSE.}
 A summarized experiment
 }
 \description{
-This function will create a summarized file, decribing reads
-from RNA-seq experiments that overlap a set of transcript features.
+This function will create a summarized experiment, decribing 
+reads from RNA-seq experiments that overlap a set of transcript features.
 Transcript features can be described as a gtf formatted table that is
-imported, or using a txdb. This is designed to be straightforward and
-with minimised parameters for first pass batch RNA-seq analyses.
+imported, or using a txdb. The summarized experiment can be build directly
+from bam files or by reading in counts in htseq format. This is designed to 
+be straightforward and with minimised parameters for batch style RNA-seq 
+analyses.
 }
 \examples{
 ## Extract summarized following example in the vignette

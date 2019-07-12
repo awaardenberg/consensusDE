@@ -354,50 +354,60 @@ plot_volcano_wrapper <- function(merged_in=NULL,
                                  names_merged_in=NULL,
                                  legend = TRUE,
                                  label = TRUE){
-
   # set of transcripts to plot at different p_cuts
   top10 <- merged_in[1:10,]
   p_01 <- merged_in[merged_in$Adj_PVal <= 0.01,]
   p_05 <- merged_in[merged_in$Adj_PVal > 0.01 & merged_in$Adj_PVal <= 0.05 ,]
   p_rest <- merged_in[merged_in$Adj_PVal > 0.05,]
-
+  cex_plus <- 0
+  #if(colnames(merged_in) %in% "LogFC_sd"){
+  if("LogFC_sd" %in% colnames(merged_in)){
+    cex_plus <- abs(merged_in$LogFC_sd)
+  }
+  
   # from exprs
   graphics::plot(p_rest$LogFC,
        -log(p_rest$Adj_PVal, 10),
        main=names_merged_in,
        ylab="-log10(adj_p)",
        xlab="Log2FC",
-       xlim=range(c(p_rest$LogFC, p_01$LogFC, p_05$LogFC, top10$LogFC)),
+       xlim=range(c(p_rest$LogFC, 
+                    p_01$LogFC, 
+                    p_05$LogFC, 
+                    top10$LogFC), na.rm = TRUE),
        ylim=range(c(-log(p_rest$Adj_PVal, 10),
                     -log(p_01$Adj_PVal, 10),
                     -log(p_05$Adj_PVal, 10),
-                    -log(top10$Adj_PVal, 10))),
-       cex=0.4, pch=16
+                    -log(top10$Adj_PVal, 10)), na.rm = TRUE),
+       cex=c(1+cex_plus), pch=16
   )
-  graphics::points(top10$LogFC,
-         -log(top10$Adj_PVal, 10),
-         col="red",
-         cex=1.5,
-         pch=16)
   graphics::points(p_05$LogFC,
          -log(p_05$Adj_PVal, 10),
          col="lightgreen",
-         cex=0.7,
+         cex=c(1+cex_plus),
          pch=16)
   graphics::points(p_01$LogFC,
          -log(p_01$Adj_PVal, 10),
          col="blue",
-         cex=1,
+         cex=c(1+cex_plus),
          pch=16)
+  graphics::points(top10$LogFC,
+                   -log(top10$Adj_PVal, 10),
+                   col="red",
+                   cex=0.5,
+                   pch=16)
   if(legend == TRUE){
-    legend("topright", c("top10", "p <= 0.01", "p <= 0.05"),
-           col=c("red", "blue", "lightgreen"),
-           pch = c(rep(16, 3)),
+    legend("topright", c(paste("top10 (RankSum)"),
+                         paste("p <= 0.01 (n=", nrow(p_01), ")", sep=""),
+                         paste("p <= 0.05 (n=", nrow(p_05), ")", sep=""), 
+                         paste("p > 0.05 (n=", nrow(p_rest), ")", sep="")),
+           col=c("red", "blue", "lightgreen", "black"),
+           pch = c(rep(16, 4)),
            title = "p-val cutoffs", inset = .02, cex=0.7)
   }
   if(label == TRUE){
     # label top 10 points
-    graphics::text(top10$LogFC, -log(top10$Adj_PVal, 10), top10$ID, cex=0.7,
+    graphics::text(top10$LogFC, -log(top10$Adj_PVal, 10), top10$ID, cex=0.6,
                    pos=4, col="black")
   }
 }
@@ -406,45 +416,57 @@ plot_ma_wrapper <- function(merged_in = NULL,
                             names_merged_in = NULL,
                             legend = TRUE,
                             label = TRUE){
-
   # set of transcripts to plot at different p_cuts
   top10 <- merged_in[1:10,]
   p_01 <- merged_in[merged_in$Adj_PVal <= 0.01,]
   p_05 <- merged_in[merged_in$Adj_PVal > 0.01 & merged_in$Adj_PVal <= 0.05 ,]
   p_rest <- merged_in[merged_in$Adj_PVal > 0.05,]
-
+  cex_plus <- 0
+  #if(colnames(merged_in) %in% "LogFC_sd"){
+  if("LogFC_sd" %in% colnames(merged_in)){
+    cex_plus <- abs(merged_in$LogFC_sd)
+  }
+  
   # from exprs
   graphics::plot(p_rest$AveExpr,
        p_rest$LogFC,
        main=names_merged_in,
        ylab="Log2FC",
        xlab="Average Expression",
-       xlim=range(c(p_rest$AveExpr, p_01$AveExpr, p_05$AveExpr, top10$AveExpr)),
-       ylim=range(c(p_rest$LogFC, p_01$LogFC, p_05$LogFC, top10$LogFC)),
-       cex=0.4, pch=16
+       xlim=range(c(p_rest$AveExpr, 
+                    p_01$AveExpr, 
+                    p_05$AveExpr, 
+                    top10$AveExpr), na.rm = TRUE),
+       ylim=range(c(p_rest$LogFC, 
+                    p_01$LogFC, 
+                    p_05$LogFC, 
+                    top10$LogFC), na.rm = TRUE),
+       cex=c(1+cex_plus), pch=16
   )
-  graphics::points(top10$AveExpr,
-         top10$LogFC,
-         col="red",
-         cex=1.5,
-         pch=16)
   graphics::points(p_05$AveExpr,
          p_05$LogFC,
          col="lightgreen",
-         cex=0.7,
+         cex=c(1+cex_plus),
          pch=16)
   graphics::points(p_01$AveExpr,
          p_01$LogFC,
          col="blue",
-         cex=1,
+         cex=c(1+cex_plus),
          pch=16)
-
+  graphics::points(top10$AveExpr,
+                   top10$LogFC,
+                   col="red",
+                   cex=0.5,
+                   pch=16)
   #abline(h=0, col="lightgrey")
 
   if(legend==TRUE){
-    legend("topright", c("top10", "p <= 0.01", "p <= 0.05"),
-           col=c("red", "blue", "lightgreen"),
-           pch = c(rep(16, 3)),
+    legend("topright", c(paste("top10 (RankSum)"),
+                         paste("p <= 0.01 (n=", nrow(p_01), ")", sep=""),
+                         paste("p <= 0.05 (n=", nrow(p_05), ")", sep=""), 
+                         paste("p > 0.05 (n=", nrow(p_rest), ")", sep="")),
+           col=c("red", "blue", "lightgreen", "black"),
+           pch = c(rep(16, 4)),
            title = "p-val cutoffs", inset = .02, cex=0.7)
 
   }
@@ -498,11 +520,11 @@ plot_density_wrapper <- function(se_in=NULL,
 
 
   y_range <- range(sapply(seq_len(length(all_dens)), function(i)
-                   all_dens[[i]]$y))
+                   all_dens[[i]]$y), na.rm = TRUE)
   # to include everything in the range:
-  y_range <- range(c(y_range, dens$y))
+  y_range <- range(c(y_range, dens$y), na.rm = TRUE)
   x_range <- range(sapply(seq_len(length(all_dens)), function(i)
-                   all_dens[[i]]$x))
+                   all_dens[[i]]$x), na.rm = TRUE)
 
   # initialise plot
   graphics::plot(all_dens[[1]], xlim = x_range, ylim = y_range,

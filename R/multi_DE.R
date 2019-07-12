@@ -16,24 +16,38 @@
 #' summarized$pairs). Options are "unpaired" or "paired". Default="unpaired"
 #' @param intercept Optional ability to set the base term for fitting the model.
 #'  This is not necessary as all pairs are computed automatically. The base
-#'  term, if set, must match the name of group in "summarized$group". Default =
-#'  NULL
+#'  term, if set, must match the name of s group in "summarized$group". Default 
+#'  = NULL
 #' @param adjust_method Method used for multiple comparison adjustment of
 #' p-values. Options are: "holm", "hochberg", "hommel", "bonferroni", "BH",
 #' "BY", "fdr" or "none". See ?p.adjust.methods for a details description and
 #' references. Default = "BH"
+#' @param norm_method Methods for normalisation. Options are: "EDASeq" or 
+#' "all_defaults". When "all_defaults" is selected, this will use all default 
+#' normalisation methods for differential expression, EDASeq for QC, and edgeR 
+#' "upperquantile" for determining RUV residuals (as per RUVSeq vignette). When 
+#' "EDASeq" is selected, this will use EDASeq normalisation throughout. EDASeq 
+#' normalisation method is selected using "EDASeq_method". Default = "EDASeq".
+#' @param EDASeq_method Method for normalisation (applies to QC results using 
+#' EDASeq and RUV when EDASeq is selected). Options are:"median","upper","full".
+#' Default = "upper"
 #' @param ruv_correct Remove Unwanted Variation (RUV)? See ?RUVr for
 #' description. Currently only RUVr, which used the residuals is enabled and one
-#'  factor of variation is determined. If set to TRUE and a "plot_dir" is
-#'  provided, additional plots after RUV correction and the RUV residuals will
-#'   be reported. Residuals are obtained through fitting a generalised linear
-#'   model (GLM) using EdgeR. Residuals are then incorporated into the
-#'   SummarizedExperiment object and models for DE analysis. Options = TRUE,
-#'   FALSE. Default = FALSE.
+#' factor of variation is determined. If set to TRUE and a "plot_dir" is
+#' provided, additional plots after RUV correction and the RUV residuals will
+#' be reported. Residuals are obtained through fitting a generalised linear
+#' model (GLM) using EdgeR. Residuals are then incorporated into the
+#' SummarizedExperiment object and all models for DE analysis. Options = TRUE,
+#' FALSE. Default = FALSE.
 #' @param ensembl_annotate If the dataset has been mapped to ensembl transcript
 #' identifiers, obtain additional annotation of the ensembl transcripts. A R 
 #' Genome Wide Annotation object e.g. org.Mm.eg.db for mouse or org.Hs.eg.db for
-#'  human must be provided. Default = NULL
+#' human must be provided. Default = NULL
+#' @param gtf_annotate Full path to a gtf file describing the transcripts. If 
+#' provided will obtain gene symbols from gtf file. If a ensembl_annotate object
+#' is also provided, this will extract annotations based on the symbols 
+#' extracted from the GTF file. It is recommended to provide both a gtf file and
+#' a tx_db for better annotation results. Default = NULL 
 #' @param plot_dir Full path to directory for output of plots (pdf files). See
 #' ?diag_plots for more details. Default = NULL
 #' @param output_voom If you wish to output the results of the Voom analysis,
@@ -41,7 +55,7 @@
 #' @param output_edger If you wish to output the results of the EdgeR analysis,
 #' provide a full path to directory for output of files. Default = NULL
 #' @param output_deseq If you wish to output the results of the DEseq2 analysis,
-#'  provide a full path to directory for output of files. Default = NULL
+#' provide a full path to directory for output of files. Default = NULL
 #' @param output_combined consensusDE will report the results of Voom, EdgeR
 #' and DEseq2 as a combined report. If you wish to output the results of the
 #' COMBINED analysis, provide a full path to directory for output of files. In
@@ -81,22 +95,27 @@
 #' @export multi_de_pairs
 #'
 #' @importFrom AnnotationDbi mapIds keytypes columns
-#' @importFrom S4Vectors DataFrame
+#' @importFrom S4Vectors DataFrame metadata metadata<-
 #' @importFrom DESeq2 DESeqDataSet DESeq
-#' @importFrom edgeR DGEList estimateDisp calcNormFactors glmFit glmLRT topTags
-#' @importFrom SummarizedExperiment assays colData colData<-
-#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet
+#' @importFrom edgeR DGEList estimateDisp estimateGLMCommonDisp estimateGLMTagwiseDisp calcNormFactors glmFit glmLRT topTags
+#' @importFrom SummarizedExperiment colData<- assays<-
+#' @importFrom SummarizedExperiment assays colData
+#' @importFrom EDASeq betweenLaneNormalization newSeqExpressionSet normCounts<-
 #' @importFrom RUVSeq RUVr
 #' @importFrom limma voom lmFit contrasts.fit eBayes topTable makeContrasts
 #' @import airway
 #' @import BiocGenerics
+#' @importFrom data.table fread
 
 multi_de_pairs <- function(summarized = NULL,
                            paired = "unpaired",
                            intercept = NULL,
                            adjust_method = "BH",
+                           EDASeq_method = "upper",
+                           norm_method = "EDASeq",
                            ruv_correct = FALSE,
                            ensembl_annotate = NULL,
+                           gtf_annotate = NULL,
                            plot_dir = NULL,
                            output_voom = NULL,
                            output_edger = NULL,
@@ -114,6 +133,16 @@ if((adjust_method %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
        \"hochberg\", \"hommel\", \"bonferroni\", \"BH\", \"BY\", \"fdr\" or
        \"none\"\n")
 }
+if((EDASeq_method %in% c("median","upper","full")) == FALSE){
+  stop("EDASeq_method must be one of the following methods: \"median\",
+       \"upper\", \"full\"")
+}
+if((norm_method %in% c("all_defaults","EDASeq")) == FALSE){
+  stop("norm_method must be one of the following methods: \"all_defaults\",
+       \"EDASeq\"")
+}
+  
+  
 if(is.null(plot_dir) && verbose == TRUE)
   message("No output directory provided for plots. Plots will not be generated")
 # check the database
@@ -142,39 +171,49 @@ if(!is.null(ensembl_annotate)){
 }
   
 if((ruv_correct != TRUE) & (ruv_correct != FALSE))
-    stop("ruv_correct can only be either \"TRUE\" or \"FALSE\".
-         Please specify\n")
+    stop("ruv_correct can only be either \"TRUE\" or \"FALSE\". Please specify")
 if(is.null(summarized)){
   if(verbose){
     message("# NO summarized experiment provided")
   }
 }
-
 # check the format of the table
 sample_table <- data.frame(colData(summarized))
-if(ncol(sample_table)==2 &&
-   (colnames(sample_table[1])!="file" ||
-    colnames(sample_table[2])!="group" ||
-    ncol(sample_table)<2))
-  stop("For unpaired data, a table must be supplied with 2 columns.
-       The first column must be labelled \"file\" and the second labelled
+if("file" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
+       \"file\"")
+}
+if("group" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
        \"group\"")
-if(ncol(sample_table)==3 &&
-   (colnames(sample_table[1])!="file" ||
-    colnames(sample_table[2])!="group" ||
-    colnames(sample_table[3])!="pairs" ||
-    ncol(sample_table)<2))
-  stop("For paired data, a table must be supplied using with 3 columns. The
-        first column must be labelled \"file\", the second labelled \"group\"
-        and third \"pairs\"")
-
+}
+if("group" %in% colnames(sample_table) == FALSE){
+  stop("For unpaired data, a table must be supplied with a column labelled 
+       \"group\"")
+}
 if((paired != "paired") & (paired != "unpaired"))
   stop("paired can only be either \"paired\" or \"unpaired\". Please specify\n")
+if(paired == "paired" & ("pairs" %in% colnames(sample_table) == FALSE)){
+  stop("For paired data, a table must be supplied with a column labelled 
+       \"pairs\"")
+}
 
-# set vaiables for plotting results
+if(!is.null(gtf_annotate)){
+  if(file.exists(gtf_annotate) == FALSE){
+    warning("GTF file specified in gtf_annotate does not exist. Setting 
+            gtf_annotate = NULL. Continuing without annotation")
+    gtf_annotate <- NULL
+  }
+}
+
+if(verbose){
+  message("# [OPTIONS] Fitting models as: ", paired)
+}
+
+# set variables for plotting results
 plot_this <- FALSE
 write_this <- FALSE
-# if the dir is not null, see plot.this to true
+# if dir is not null, see plot_this to TRUE
 if(!is.null(plot_dir)){
   plot_this <- TRUE
   write_this <- TRUE
@@ -191,7 +230,26 @@ contrast_matrix <- build_contrast_matrix(design$table, design$design)
 design_table <- design$table
 design <- design$design
 
-# 2. normalise and do QC:
+# set default
+gene_coords <- NULL
+# but if gene_coords exists as a meta-data
+if(is.null(metadata(summarized)$gene_coords) == FALSE){
+    gene_coords <- data.frame(metadata(summarized)$gene_coords)
+    gene_coords$coords <- paste("chr",
+                                gene_coords$seqnames,
+                                ":",
+                                gene_coords$start,
+                                "-",
+                                gene_coords$end,
+                                sep="")
+    gene_coords <- data.frame("ID" = gene_coords$gene_id,
+                              "coords" = gene_coords$coords,
+                              "strand" = gene_coords$strand,
+                              "width" = gene_coords$width)
+    gene_coords$coords <- gsub("chrchr", "chr", gene_coords$coords)
+}
+
+# normalise and do QC:
 se_qc <- newSeqExpressionSet(assays(summarized)$counts,
                             phenoData = data.frame(colData(summarized)),
                             row.names = colnames(assays(summarized)$counts))
@@ -209,7 +267,7 @@ if(plot_this == TRUE){
                        label = label))
 }
 # normalise for library size (i.e. remove as an effect..)
-se_qc_norm <- betweenLaneNormalization(se_qc, which="upper")
+se_qc_norm <- betweenLaneNormalization(se_qc, which=EDASeq_method)
 # output diagnostic plots:
 if(plot_this == TRUE){
   if(verbose){
@@ -240,28 +298,30 @@ if(plot_this == TRUE){
 }
 # 3 RUV analysis
 # this will basically update the design matrix and contrast matrix
+# establish output of RUV corrected summarized object
+summarized_ruv <- NULL
+
 if(ruv_correct==TRUE){
   if(verbose){
-    message("# [OPTIONS] RUV batch correction has been selected")
+    message("# [OPTIONS] RUV correction has been selected")
   }
-
   # determine the intercept from the base file
   ruv_se <- ruvr_correct(se = summarized,
                          plot_dir = plot_dir,
                          design = design,
                          pairing = paired,
                          intercept = intercept,
+                         norm_method = norm_method,
+                         EDASeq_method = EDASeq_method,
                          plot_this = plot_this,
                          write_this = write_this,
                          verbose = verbose,
                          legend = legend,
                          label = label)
-  # update to include RUVr weights
-  design <- stats::model.matrix(~0 + W_1 + group, data = ruv_se[[2]]$table)
-  colnames(design) <- gsub("group", "", colnames(design))
-  
+  # update the summarized_ruv now
+  summarized_ruv <- ruv_se$ruv_summarized
   # current only supports "W_1", i.e. k = 1 from RUVSeq
-  design <- build_design(se = ruv_se[[1]],
+  design <- build_design(se = ruv_se$se,
                          pairing = paired,
                          intercept = intercept,
                          ruv = "W_1")
@@ -281,15 +341,27 @@ if(ruv_correct==TRUE){
 if(verbose){
   message("# Performing DEseq2 analyses")
 }
-deseq_res <- deseq_wrapper(summarized, design, contrast_matrix)
+deseq_res <- deseq_wrapper(summarized, 
+                           design, 
+                           contrast_matrix,
+                           norm_method = norm_method,
+                           EDASeq_method = EDASeq_method)
 if(verbose){
   message("# Performing EdgeR analyses")
 }
-edger_res <- edger_wrapper(summarized, design, contrast_matrix)
+edger_res <- edger_wrapper(summarized, 
+                           design, 
+                           contrast_matrix,
+                           norm_method = norm_method,
+                           EDASeq_method = EDASeq_method)
 if(verbose){
   message("# Performing voom analyses")
 }
-voom_res <- voom_wrapper(summarized, design, contrast_matrix)
+voom_res <- voom_wrapper(summarized, 
+                         design, 
+                         contrast_matrix,
+                         norm_method = norm_method,
+                         EDASeq_method = EDASeq_method)
 
 #########################################################
 # Merge results and report all comparisons done as well
@@ -323,6 +395,7 @@ set_length <- max(length(voom_res$short_results),
 if(verbose){
   message("# Creating merged/consensus results for edgeR, DEseq2 and Voom")
 }
+
 merged <- lapply(seq_len(set_length), function(i)
   merge_results(x = edger_res$short_results[[i]],
                 y = deseq_res$short_results[[i]],
@@ -333,14 +406,32 @@ merged <- lapply(seq_len(set_length), function(i)
                 adjust_method = adjust_method,
                 return = "short"))
 
-if(!is.null(ensembl_annotate)){
+if(!is.null(ensembl_annotate) & is.null(gtf_annotate)){
   if(verbose){
-    message("# Annotating results")
+    message("# Annotating results from tx_db ONLY")
   }
-    merged <- lapply(seq_len(length(merged)), function(i)
-                     annotate_ensembl(merged[[i]], merged[[i]]$ID,
-                                      tx_db = ensembl_annotate))
+  # now annotate each ensembl transcript
+  merged <- lapply(seq_len(length(merged)), function(i)
+                     annotate_ensembl(merged[[i]],
+                                      tx_db = ensembl_annotate,
+                                      coords = gene_coords
+                                      ))
 }
+# select this over the ensembl
+# need to check the format of the file
+if(!is.null(gtf_annotate)){
+  if(verbose){
+    message("# Annotating results from gtf file")
+  }
+  gtf_table <- extract_gtf_attributes(gtf_annotate, verbose = verbose)
+  # now annotate ensembl transcripts
+  merged <- lapply(seq_len(length(merged)), function(i)
+                    annotate_gtf(merged[[i]],
+                                 gtf_table = gtf_table,
+                                 tx_db = ensembl_annotate,
+                                 coords = gene_coords))
+}
+
 names(merged) <- names(deseq_res$short_results)
 
 if(plot_this == TRUE){
@@ -348,11 +439,10 @@ if(plot_this == TRUE){
     message("# Plotting Dignostic plots for Merged Data. 
                Will be located here: ", plot_dir)
   }
-
   # select and change the column names (for compatability with diag_plots())
   merged_plots <- lapply(seq_len(length(merged)), function(i)
                              rename_colnames_list(data_in = merged[[i]],
-                                                  vector_search = "edger_adj_p",
+                                                  vector_search = "p_intersect",
                                                   vector_replace = "Adj_PVal",
                                                   which_list = i)
   )
@@ -417,10 +507,13 @@ if(!is.null(output_voom) |
   }
   # invoke write_table_wrapper
   write_table_wrapper(summarized = summarized,
+                      summarized_ruv = summarized_ruv,
                       merged = list("merged" = merged,
                                     "deseq" = deseq_res,
                                     "edger" = edger_res,
                                     "voom" = voom_res),
+                      EDASeq_method = EDASeq_method,
+                      norm_method = norm_method,
                       voom_dir = output_voom,
                       edger_dir = output_edger,
                       deseq_dir = output_deseq,
@@ -438,7 +531,7 @@ if(ruv_correct == TRUE){
               "deseq" = deseq_res,
               "edger" = edger_res,
               "voom" = voom_res,
-              "summarized" = ruv_se[[1]]))
+              "summarized" = summarized_ruv))
 }
 
 if(ruv_correct == FALSE){
@@ -454,14 +547,15 @@ if(ruv_correct == FALSE){
 # helper function for annotating and writing tables:
 # these are seperate commands for writing tables:
 write_table_wrapper <- function(summarized = NULL,
+                                summarized_ruv = NULL,
+                                EDASeq_method = EDASeq_method,
+                                norm_method = norm_method,
                                 merged = NULL,
                                 voom_dir = NULL,
                                 edger_dir = NULL,
                                 deseq_dir = NULL,
                                 merged_dir = NULL){
 
-# format checks
-  # check the merged is a list format and check the names! etc.
 #########################################################
 # obtain raw and normalised counts
 raw <- assays(summarized)$counts
@@ -475,7 +569,7 @@ se_new <- newSeqExpressionSet(assays(summarized)$counts,
                               phenoData = data.frame(colData(summarized)),
                               row_names=colnames(assays(summarized)$counts))
 # normalise for library size
-se_norm <- betweenLaneNormalization(se_new, which="upper")
+se_norm <- betweenLaneNormalization(se_new, which=EDASeq_method)
 norm_count <- normCounts(se_norm)
 cpm_norm <- cpm(normCounts(se_norm))
 cpm_norm_log <- cpm(normCounts(se_norm), log=TRUE)
@@ -588,19 +682,12 @@ intersect_test <- function(x=NULL, y=NULL, z=NULL){
 return(common)
 }
 
-# function for obtaining non-de rows from the outputs of the XX$short_results
-# from the DE analysis:
-non_de_rows <- function(input_data, p_cut=0.5){
-    data_out <- rownames(input_data[input_data$PValue > p_cut,])
-    return(data_out)
-}
-
 # function for merging 3 DE tables in "short" format
 # returns merged table with ranks for each
 merge_results <- function(x, y, z,
-name_x, name_y, name_z,
-adjust_method="BH",
-return="short"){
+                          name_x, name_y, name_z,
+                          adjust_method="BH",
+                          return="short"){
     x <- data.frame("ID"=rownames(x), x)
     y <- data.frame("ID"=rownames(y), y)
     z <- data.frame("ID"=rownames(z), z)
@@ -624,33 +711,51 @@ return="short"){
     merge_out <- merge_out[order(merge_out$sum, decreasing=FALSE),]
     
     # determine which is the max p value (or contains least probability)
-    merge_out$p_max <- sapply(seq_len(nrow(merge_out)), function(i)
-                        max(c(merge_out$PValue.x[i], 
-                              merge_out$PValue.y[i], 
-                              merge_out$PValue[i])))
-
-
+    merge_out$p_intersect <- apply(cbind(merge_out$PValue.x, 
+                                         merge_out$PValue.y, 
+                                         merge_out$PValue), 1, max)
+    
+    merge_out$p_union <- apply(cbind(merge_out$PValue.x, 
+                                     merge_out$PValue.y, 
+                                     merge_out$PValue), 1, min)
+    
+    merge_out$AveExpr_mean <- apply(cbind(merge_out$AveExpr.x, 
+                                   merge_out$AveExpr.y, 
+                                   merge_out$AveExpr), 1, mean)
+    
+    merge_out$LogFC_mean <- apply(cbind(merge_out$logFC.x, 
+                                        merge_out$logFC.y, 
+                                        merge_out$logFC), 1, mean)
+    
+    merge_out$LogFC_sd <- apply(cbind(merge_out$logFC.x, 
+                                      merge_out$logFC.y, 
+                                      merge_out$logFC), 1, sd)
+    
+    
     if(return=="short"){
         merge_out <- data.frame(merge_out$ID,
-        merge_out$AveExpr,
-        merge_out$logFC.x,
-        merge_out$PValue.x,
-        merge_out$PValue.y,
-        merge_out$PValue,
-        rank(merge_out$PValue.x),
-        rank(merge_out$PValue.y),
-        rank(merge_out$PValue),
-        merge_out$sum,
-        merge_out$p_max)
-        colnames(merge_out) <- c("ID", "AveExpr", "LogFC",
-        paste(name_x, "_adj_p", sep=""),
-        paste(name_y, "_adj_p", sep=""),
-        paste(name_z, "_adj_p", sep=""),
-        paste(name_x, "_rank", sep=""),
-        paste(name_y, "_rank", sep=""),
-        paste(name_z, "_rank", sep=""),
-        "rank_sum",
-        "p_max")
+                                merge_out$AveExpr_mean,
+                                merge_out$LogFC_mean,
+                                merge_out$LogFC_sd,
+                                merge_out$PValue.x,
+                                merge_out$PValue.y,
+                                merge_out$PValue,
+                                rank(merge_out$PValue.x),
+                                rank(merge_out$PValue.y),
+                                rank(merge_out$PValue),
+                                merge_out$sum,
+                                merge_out$p_intersect,
+                                merge_out$p_union)
+        colnames(merge_out) <- c("ID", "AveExpr", "LogFC", "LogFC_sd",
+                                  paste(name_x, "_adj_p", sep=""),
+                                  paste(name_y, "_adj_p", sep=""),
+                                  paste(name_z, "_adj_p", sep=""),
+                                  paste(name_x, "_rank", sep=""),
+                                  paste(name_y, "_rank", sep=""),
+                                  paste(name_z, "_rank", sep=""),
+                                  "rank_sum",
+                                  "p_intersect",
+                                  "p_union")
 
     }
     return(merge_out)
@@ -666,7 +771,7 @@ table_means <- function(count_matrix, matrix_names){
                                     %in% unique(colnames(count_matrix))[i]])))
     colnames(mean_counts) <- c("ID", paste(unique(colnames(count_matrix)),
                                            "_mean", sep=""))
-    return(mean_counts)
+return(mean_counts)
 }
 
 # function to automate contrast matrix creation of all pairs
@@ -702,8 +807,6 @@ build_contrast_matrix <- function(table_design, design){
     }
     return(contrast_matrix)
 }
-
-
 
 # function to create 1) design matrix and 2) design table
 # works with W_1 from RUV only
@@ -771,16 +874,15 @@ DEseq_contrasts <- function(contrast_matrix, n){
 
 # annotation wrapper - works with "OrgDb" object from BioConductor
 annotate_ensembl <- function(data_in,
-                             ids,
-                             tx_db){
-
-    short_ens <- gsub("\\..*", "", ids)
+                             tx_db,
+                             coords = NULL
+                             ){
+    short_ens <- gsub("\\..*", "", data_in$ID)
     data_in$genename <- mapIds(tx_db,
                               keys = short_ens,
                               column="GENENAME",
                               keytype="ENSEMBL",
                               multiVals="first")
-
     data_in$symbol <- mapIds(tx_db,
                             keys = short_ens,
                             column="SYMBOL",
@@ -791,14 +893,41 @@ annotate_ensembl <- function(data_in,
                           column="PATH",
                           keytype="ENSEMBL",
                           multiVals="first")
+
+    # add coordinates IF PROVIDED
+    # filter wont follow through with coords, so LH merge
+    if(is.null(coords) == FALSE){
+        data_in <- merge(data_in, coords, by="ID", all.x=TRUE)
+    }
+    # reorder the data.frame:
+    data_in <- data_in[order(data_in$rank_sum, decreasing=FALSE),]
+    
 return(data_in)
 }
 
 # function for calling Voom analysis given se, design and contrast_matrix
-voom_wrapper <- function(se, design, contrast_matrix){
-    y <- DGEList(counts = assays(se)$counts,
-                 group = se$group)
-    y <- calcNormFactors(y)
+voom_wrapper <- function(se, 
+                         design, 
+                         contrast_matrix,
+                         norm_method,
+                         EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      y <- DGEList(counts = assays(se)$counts,
+                   group = se$group)
+      y <- calcNormFactors(y)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      
+      y <- DGEList(counts=normCounts(y), group=y$group)
+      y <- calcNormFactors(y, method="none")
+    }
+
     v <- voom(y, design = design)
     fit_voom <- lmFit(v, design = design)
     # fitting with user supplied contrast_matrix for each comparison
@@ -826,11 +955,27 @@ voom_wrapper <- function(se, design, contrast_matrix){
 }
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
-edger_wrapper <- function(se, design, contrast_matrix){
-    y <- DGEList(counts=assays(se)$counts,
-    group=se$group)
-    # normalise accross groups
-    y <- calcNormFactors(y)
+edger_wrapper <- function(se, 
+                          design, 
+                          contrast_matrix,
+                          norm_method,
+                          EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      y <- DGEList(counts = assays(se)$counts,
+                   group = se$group)
+      y <- calcNormFactors(y)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      
+      y <- DGEList(counts=normCounts(y), group=y$group)
+      y <- calcNormFactors(y, method="none")
+    }
     # NB. there are different ways of estimating dispersion
     y_disp <- estimateDisp(y, design)
     fit_edger <- glmFit(y_disp, design)
@@ -853,17 +998,43 @@ edger_wrapper <- function(se, design, contrast_matrix){
 }
 
 # function for calling DESeq2 analysis given se, design and contrast_matrix
-deseq_wrapper <- function(se, design, contrast_matrix){
-
-    dds <- DESeqDataSet(se, design = design)
-    dds <- DESeq(dds)
+deseq_wrapper <- function(se, 
+                          design, 
+                          contrast_matrix,
+                          norm_method,
+                          EDASeq_method){
+  
+    if(norm_method == "all_defaults"){
+      dds <- DESeqDataSet(se, design = design)
+      # this is automatically performed here:
+      # dds <- estimateSizeFactors(dds)
+      dds <- DESeq(dds)
+    }
+    if(norm_method == "EDASeq"){
+      y <- newSeqExpressionSet(assays(se)$counts,
+                               phenoData = data.frame(colData(se)),
+                               row.names = colnames(assays(se)$counts))
+      # normalise for library size
+      y <- betweenLaneNormalization(y, which=EDASeq_method)
+      # put normalised counts back into se
+      assays(se)$counts <- normCounts(y) 
+      # put in dds
+      dds <- DESeqDataSet(se, design = design)
+      dds <- DESeq(dds)
+      # set size factors to 1
+      sizeFactors(dds) <- rep(1, length(sizeFactors(dds)))
+    }
+  
     # extract all if the contrasts and return all results
     all_contrasts <- lapply(seq_len(ncol(contrast_matrix)),
     function(i) DEseq_contrasts(contrast_matrix, i))
     # conduct all tests
     # full_table of results
+    # here - cooksCutoff is disabled for comparability
     all_results <- lapply(seq_len(length(all_contrasts)),
-    function(i) results(dds, contrast=all_contrasts[[i]]$contrast_list)
+    function(i) results(dds, 
+                        contrast=all_contrasts[[i]]$contrast_list,
+                        cooksCutoff = FALSE)
     )
     names(all_results) <- sapply(seq_len(length(all_contrasts)), function(i)
     all_contrasts[[i]]$contrast_name)
@@ -874,7 +1045,8 @@ deseq_wrapper <- function(se, design, contrast_matrix){
     "PValue"=all_results[[i]]$pvalue,
     row.names=rownames(all_results[[i]])))
     names(short_results) <- names(all_results)
-    return(list("short_results"=short_results,
+    
+return(list("short_results"=short_results,
     "full_results"=all_results,
     "fitted"=dds,
     "contrasts"=contrast_matrix))
@@ -887,6 +1059,9 @@ deseq_wrapper <- function(se, design, contrast_matrix){
 ruvr_correct <- function(se = NULL,
                          design = NULL,
                          pairing = "unpaired",
+                         EDASeq_method = EDASeq_method,
+                         norm_method = norm_method,
+                         edgeR_norm = "upperquartile",
                          intercept = NULL,
                          plot_this = FALSE,
                          write_this = FALSE,
@@ -898,23 +1073,36 @@ ruvr_correct <- function(se = NULL,
     ruv <- newSeqExpressionSet(assays(se)$counts,
             phenoData = data.frame(colData(se)),
             row.names = colnames(assays(se)$counts))
-    # normalise for library size (i.e. remove as an effect..)
-    ruv_norm <- betweenLaneNormalization(ruv, which="upper")
-
-    # fit GLM for estimation of W_1:
-    ruv_y <- DGEList(counts=counts(ruv_norm), group=ruv_norm$group)
-    ruv_y <- calcNormFactors(ruv_y, method="upperquartile")
-    ruv_y <- estimateDisp(ruv_y, design)
+    if(norm_method == "EDASeq"){
+      # normalise for library size
+      ruv <- betweenLaneNormalization(ruv, which=EDASeq_method)
+      ruv_y <- DGEList(counts=normCounts(ruv), group=ruv$group)
+      ruv_y <- calcNormFactors(ruv_y, method="none")
+    }
+    if(norm_method == "all_defaults"){
+      ruv_y <- DGEList(counts=counts(ruv), group=ruv$group)
+      ruv_y <- calcNormFactors(ruv_y, method=edgeR_norm)
+      
+    }
+    # update ruv norm counts depending on approach
+    normCounts(ruv) <- ruv_y$counts
+    
+    # estimate dispersion parameters
+    ruv_y <- estimateGLMCommonDisp(ruv_y, design)
+    ruv_y <- estimateGLMTagwiseDisp(ruv_y, design)
+    # fit
     fit_ruv <- glmFit(ruv_y, design)
+    # obtain residuals
     res_ruv <- stats::residuals(fit_ruv, type="deviance")
-    # >>>>this is a questionable parameter, using k=1
-    # Assuming only a batch factor to remove
-    ruv_se <- RUVr(ruv_norm, rownames(ruv_norm), k=1, res_ruv)
+    # k=1, assuming a single factor, refit with residuals
+    ruv_se <- RUVr(ruv, rownames(ruv), k=1, res_ruv)
+    
     # build design and contrast matrix for refitting model
     design <- build_design(se=ruv_se,
                            pairing=pairing,
                            intercept=intercept,
                            ruv="W_1")
+    
     # output RLE and PCA plots
     if(plot_this == TRUE){
         if(verbose){
@@ -946,6 +1134,83 @@ ruvr_correct <- function(se = NULL,
     # update colData in the SE to include the W_1
     colData(se) <- S4Vectors::DataFrame(design$table)
     colnames(se) <- colData(se)$file
-return(list(se, design))
+    
+    return_ruv_se <- ruv_se
+    # put normalised counts back into se
+    # assays(return_ruv_se)$normCounts <- normCounts(ruv_se) 
+
+return(list("se" = se, 
+            "design" = design,
+            "ruv_summarized" = return_ruv_se))
 }
 
+extract_gtf_attributes <- function(gtf_path, verbose){
+  if(verbose){
+    message("# Reading gtf file in")
+  }
+  gtf_table <- fread(gtf_path, 
+                     skip = 1, 
+                     header = FALSE)
+  colnames(gtf_table) <- c("chr",
+                           "source",
+                           "type",
+                           "start",
+                           "end",
+                           "score",
+                           "strand",
+                           "phase",
+                           "attributes")
+  if(verbose){
+    message("# Extracting gtf attributes")
+  }
+  # speed up
+  gtf_attrib <- extract_attributes(gtf_attributes = gtf_table$attributes)
+  gtf_table_out <- data.frame("ID" = as.character(gtf_attrib$ID),
+                              "symbol" = as.character(gtf_attrib$geneid))
+  if(verbose){
+    message("# Cleaning up gtf attributes")
+  }
+  return(unique(gtf_table_out))
+}
+
+annotate_gtf <- function(data_in,
+                         gtf_table,
+                         tx_db,
+                         coords){
+  # merge with extracted gtf annotations and mapby symbol
+  data_in <- merge(data_in, gtf_table, by="ID", all.x=TRUE)
+  # then use the gtf symbols for annotation
+  if(!is.null(tx_db)){
+    data_in$genename <- mapIds(tx_db,
+                               keys = as.character(data_in$symbol),
+                               column="GENENAME",
+                               keytype="SYMBOL",
+                               multiVals="first")
+    data_in$kegg <- mapIds(tx_db,
+                           keys = as.character(data_in$symbol),
+                           column="PATH",
+                           keytype="SYMBOL",
+                           multiVals="first")
+  }
+  # add coordinates IF PROVIDED
+  if(!is.null(coords)){
+    data_in <- merge(data_in, coords, by="ID", all.x=TRUE)
+  }
+  # reorder data.frame
+  data_in <- data_in[order(data_in$rank_sum, decreasing=FALSE),]
+  return(data_in)
+}
+
+# reformat to be vectorised
+extract_attributes <- function(gtf_attributes){
+  # option to extract additional gtf parameters
+  gtf_id <- gsub("\"", "", 
+                 gsub(";.*", "", 
+                      gsub(".*gene_id ","", gtf_attributes)))
+  gtf_gene <- gsub("\"", "", 
+                   gsub(";.*", "", 
+                        gsub(".*gene_name ","", gtf_attributes)))
+  
+  return(list("ID" = gtf_id,
+              "geneid" = gtf_gene))
+}

@@ -1,8 +1,45 @@
-Changes in version 1.0.0 (2018-11-01)
-+ Submitted to Bioconductor
+Changes in version 1.0.7 (2019-07-12)
++ correcting release version for compatability with BioC 3.8
++ norm_method paramter in multi_de_pairs to allow only EDASeq normalisation 
++ make character output for annotation
++ remove prior normalisation for RUVr
++ fix buildSummarized bug in detection of minimum paired numbers
++ fix buildSummarized htseq with out of order rownames
++ add parameter to buildSummarized for technical_reps
++ technical_reps merges reads from technical replicates
++ change merged column name from p_max to p_intersect
++ change LogFC of merged results to mean(LogFC) of all methods
++ change AveExpr of merged results to mean(AveExpr) of all methods
++ addition of merged column name p_union (Union)
++ addition of merged column name LogFC_sd (Standard Deviation of FC)
++ updating plotting functions to add weight for LogFC_sd
++ add numbers for each category to legend of plots
++ disabled cooksCutoff for DESeq2 for comparability of all p-value rankings
++ add option gtf_annotate multi_de_pairs for annotation of gene symbols from gtf and combine with tx_db
++ update vignette
++ export RUV corrected summarized file before model fit
++ option to summarize read by transcript, exon or cds added to buildSummarized
++ added chromosome coordinates to annotation of merged results
++ include gtf or txdb as meta-data in summarized object
++ added option, htseq_dir, to import HTSEQ count files to buildSummarized
++ fixed sample_table format check (refactorise)
 
-Changes in version 1.0.1 (2019-12-07)
-+ Fixed bugs - build gtf from path
+Changes in version 1.0.6 (2019-12-31)
++ add legend and label option to multi_de_plots
++ fixing bug for paired mode model matrix in multi_de_pairs without RUV
++ update vignette
+
+Changes in version 1.0.5 (2019-12-16)
++ fixing first column name when writing tables for edgeR, Voom and DEseq
++ fixed RUV model coefficients carrying through
+
+Changes in version 1.0.4 (2019-12-12)
++ fixed ranking bug for combined data
++ adding min_p to merged tables
+
+Changes in version 1.0.3 (2019-12-10)
++ fixed ensembl_annotate option for multi_de_pairs
++ added BiocGenerics as depends
 
 Changes in version 1.0.2 (2019-12-09)
 + filter error update to buildSummarized
@@ -13,19 +50,8 @@ Changes in version 1.0.2 (2019-12-09)
 + update filter option to permit from summarized experiment
 + update vignette
 
-Changes in version 1.0.3 (2019-12-10)
-+ fixed ensembl_annotate option for multi_de_pairs
-+ added BiocGenerics as depends
+Changes in version 1.0.1 (2019-12-07)
++ Fixed bugs - build gtf from path
 
-Changes in version 1.0.4 (2019-12-12)
-+ fixed ranking bug for combined data
-+ adding min_p to merged tables
-
-Changes in version 1.0.5 (2019-12-16)
-+ fixing first column name when writing tables for edgeR, Voom and DEseq
-+ fixed RUV model coefficients carrying through
-
-Changes in version 1.0.6 (2019-12-31)
-+ add legend and label option to multi_de_plots
-+ fixing bug for paired mode model matrix in multi_de_pairs without RUV
-+ update vignette
+Changes in version 1.0.0 (2018-11-01)
++ Submitted to Bioconductor

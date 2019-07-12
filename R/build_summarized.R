@@ -1,31 +1,49 @@
 #' Generate summarized Read File for DE analyses
 #
-#' @description This function will create a summarized file, decribing reads
-#' from RNA-seq experiments that overlap a set of transcript features.
+#' @description This function will create a summarized experiment, decribing 
+#' reads from RNA-seq experiments that overlap a set of transcript features.
 #' Transcript features can be described as a gtf formatted table that is
-#' imported, or using a txdb. This is designed to be straightforward and
-#' with minimised parameters for first pass batch RNA-seq analyses.
+#' imported, or using a txdb. The summarized experiment can be build directly
+#' from bam files or by reading in counts in htseq format. This is designed to 
+#' be straightforward and with minimised parameters for batch style RNA-seq 
+#' analyses.
 #'
 #' @param sample_table A data.frame describing samples. For paired mode it must
-#' contain 3 columns, with the names "file", "group" and "pairs". The filename
-#' is the name in the directory supplied with the "bam_dir" parameter below.
-#' This is not required if an existing summarized file is provided. Default=NULL
+#' at least 2 columns, "file", "group", and option additional columns, "pairs"
+#' and "tech_replicate" for describing sample pairing and instances of technical
+#' replicates. The filename "file" must correspong to the name of the file in 
+#' the directory supplied with the "bam_dir" parameter below - or ar error will
+#' be reported and buildSummarized will halt. This is not required if an 
+#' existing summarized file is provided. Default = NULL
 #' @param bam_dir Full path to location of bam files listed in the "file" column
 #'  in the sample_table provided above. This is not required if an existing
-#'  summarized file is provided. Default=NULL
+#'  summarized file is provided. Default = NULL
+#' @param htseq_dir Full path to location of htseq files listed in the "file" 
+#' column in the sample_table described above. This is not required if an 
+#' existing summarized file is provided. Files must end in ".txt". Default = 
+#' NULL
 #' @param gtf Full path to a gtf file describing the transcript coordinates to
 #' map the RNA-seq reads to. GTF file is not required if providing a
 #' pre-computed summarized experiment file previously generated using
 #' buildSummarized() OR a tx_db object (below). Default = NULL
 #' @param tx_db An R txdb object. E.g. TxDb.Dmelanogaster.UCSC.dm3.ensGene.
 #' Default = NULL
+#' @param technical_reps Are there technical replicates to merge counts? I.e. 
+#' are there multiple technical replicates run accross multiple lanes/sequencing
+#' runs. If "TRUE", unique sample names should be provided in a "tech_replicate"
+#' column of the "sample_table" for identification. Options are "TRUE" or 
+#' "FALSE". Default = "FALSE"
+#' @param map_reads Which features to count reads by. Options are "transcript", 
+#'  "exon" or "cds". This will invoke transcriptsBy(), exonsBy() or cdsBy() 
+#'  respectively. Default = "transcript"
 #' @param mapping_mode Options are "Union", "IntersectionStrict" and
 #' "IntersectionNotEmpty". see "mode" in ?summarizeOverlaps for explanation.
 #' Default = "Union"
 #' @param read_format Are the reads from single-end or paired-end data? Option
-#' are "paired" or "single". An option must be selected. Default = NULL
+#' are "paired" or "single". An option must be selected if htseq_dir is NULL and
+#' read are summarized from BAM files. Default = NULL
 #' @param ignore_strand Ignore strand when mapping reads? see "ignore_strand" in
-#' ?summarizeOverlaps for explanation. Default=FALSE
+#' ?summarizeOverlaps for explanation. Default = FALSE
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default = TRUE
@@ -37,7 +55,7 @@
 #' summarized experiment generated.
 #' @param filter Perform filtering of low count and missing data from the
 #' summarized experiment file? This uses default filtering via "filterByExpr".
-#' See ?filterByExpr for further information. Default=FALSE
+#' See ?filterByExpr for further information. Default = FALSE
 #' @param BamFileList_yiedsize If running into memory problems. Set the number
 #' of lines to an integer value. See "yieldSize" description in ?BamFileList for
 #'  an explanation.
@@ -80,19 +98,25 @@
 #'
 #' @export buildSummarized
 #'
-#' @importFrom SummarizedExperiment colData colData<-
+#' @importFrom SummarizedExperiment colData colData<- SummarizedExperiment rowRanges<-
+#' @importFrom S4Vectors metadata metadata<- SimpleList
 #' @importFrom Rsamtools BamFileList
-#' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy
+#' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy transcriptsBy cdsBy genes
 #' @importFrom GenomicAlignments summarizeOverlaps
 #' @importFrom BiocParallel register MulticoreParam
 #' @importFrom edgeR filterByExpr
 #' @import TxDb.Dmelanogaster.UCSC.dm3.ensGene
 #' @import Biostrings
+#' @importFrom utils read.table
+#' @importFrom ensembldb transcripts
 
 buildSummarized <- function(sample_table = NULL,
                             bam_dir = NULL,
+                            htseq_dir = NULL,
                             gtf = NULL,
                             tx_db = NULL,
+                            technical_reps = FALSE,
+                            map_reads = "transcript",
                             mapping_mode = "Union",
                             read_format = NULL,
                             ignore_strand = FALSE,
@@ -106,27 +130,37 @@ buildSummarized <- function(sample_table = NULL,
                             verbose = FALSE){
 
 ####///---- check inputs ----\\\###
-if(is.null(summarized) & (is.null(read_format)))
+if(is.null(summarized) & is.null(htseq_dir) & (is.null(read_format)))
   stop("read_format must be specified as either \"paired\", or \"single\" if
-       a summarized file has not been generated.")
-if(is.null(summarized) & (!is.null(read_format))){
-  if(read_format != "paired" & read_format != "single"){
+       a summarized file or htseq_dir has not been generated .")
+if(is.null(summarized)){
+  if(!is.null(bam_dir)){
+    if(is.null(read_format)){
+      stop("read_format must be specified as either \"paired\", or \"single\" if
+           a summarized file has not been generated and read counting is from
+           bam files.")
+    }
+    if((read_format == "paired" | read_format == "single") == FALSE){
     stop("read_format must be specified as either \"paired\", or \"single\" if
-       a summarized file has not been generated.")
-  }
+         a summarized file has not been generated and read counting is from
+           bam files.")
+    }
   # define mode for summarizeOverlaps
   if(read_format == "paired")
     singleEnd_paired <- FALSE
   if(read_format == "single")
     singleEnd_paired <- TRUE
+  }
 }
-
+  
 if(!is.null(tx_db) & !is.null(gtf)){
   warning("Both a tx_db object and path to gtf file have been provided. The path
             to the gtf file will be used in this instance.")
   tx_db <- NULL
 }
-      
+if((technical_reps != TRUE) & (technical_reps != FALSE))
+  stop("technical_reps can only be either \"TRUE\" or \"FALSE\". Please specify")
+  
 # be careful with more than one worker here: is extremely memory intense!
 # check n_cores is integer; BamFileList_yiedsize is NA_integer_ or an integer...
 is_wholenumber <-
@@ -136,9 +170,12 @@ if(!is_wholenumber(n_cores))
   stop("n_cores must be an integer")
   # register the number of cores to used:
   register(MulticoreParam(workers=n_cores))
-if(is.null(bam_dir) & is.null(summarized))
-  stop("A directory to Bam files must be provided when a summarized file is not
-       provided.")
+if(is.null(bam_dir) & is.null(htseq_dir) & is.null(summarized))
+  stop("A directory to .bam or htseq text files must be provided when a 
+        summarized file is not provided.")
+if(!is.null(bam_dir) & !is.null(htseq_dir))
+  stop("EITHER a directory to .bam or htseq text files can be provided - NOT 
+        BOTH. Please provide a path to only one and rerun.")
 if(is.null(gtf) & is.null(tx_db) & is.null(summarized))
   stop("No summarized file is provided and missing a GTF or txdb file. Provide
         full path to gtf file or a txdb for mapping bam file reads")
@@ -154,9 +191,14 @@ if(!(filter == TRUE || filter == FALSE))
 if(filter == TRUE & (is.null(sample_table) & is.null(summarized)))
   stop("Filtering can only be done if a sample_table table has been provided 
        with groups or a previously generated summarized experiment is provided")
+  
+if(!(map_reads == "transcript" || map_reads == "exon" || map_reads ==  "cds"))
+  stop("map_reads must be specified as either \"transcript\", \"exon\", 
+       or \"cds\"")
 
 ####///---- input checks DONE ----\\\###
-
+# intialise stats for metadata
+stats <- c()
 # create a new summarized object and save
 if(is.null(summarized)){
   if(verbose){
@@ -169,6 +211,12 @@ if(is.null(summarized)){
   if("group" %in% colnames(sample_table) == FALSE){
     stop("A sample_table must be supplied with a column labelled \"group\"")
   }
+  if(technical_reps == TRUE & ("tech_replicate" %in% colnames(sample_table) == FALSE)){
+    stop("For technical_reps data, sample_table must be supplied with a column 
+          labelled \"tech_replicate\"")
+  }
+  # ensure sample table groups are refactored
+  sample_table$group <- as.factor(as.character(sample_table$group))
   # check that there are minimum of two replicates in groups...
   if(force_build == FALSE && min(summary(sample_table$group)) < 2)
     stop("The sample_table provided contains groups with less than two 
@@ -177,25 +225,46 @@ if(is.null(summarized)){
     warning("The sample_table provided contains groups with less than two 
          replicates. You have selected to continue with force_build = TRUE")
   # check paired options are not matching the groups... i.e. replicated
+  
   if("pairs" %in% colnames(sample_table) == TRUE){
-    check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
-    if(length(unique(check_pairs)) != nrow(sample_table)){
-      stop("pairs column in sample_table contains pairings from same group.
-           Technical replication is not supported.")
+    # if technical replicates are to be merged
+    if("tech_replicate"  %in% colnames(sample_table) == TRUE){
+      check_techs <- paste(sample_table$group, sample_table$pairs, sample_table$tech_replicate, sep="_")
+      check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
+      if(length(unique(check_pairs)) != length(unique(check_techs))){
+      #if(length(unique(check_pairs)) != nrow(sample_table)){
+        stop("pairs column in sample_table contains pairings from same group OR
+             there is a problem with labelling of \"tech_replicate\" column.")
+      }
     }
-    if(min(summary(sample_table$pairs)) < 2)
-      stop("The sample_table provided contains pairs with less than two 
-           samples.")
+    # if no technical replicates are to be merged
+    if("tech_replicate"  %in% colnames(sample_table) == FALSE){
+      check_pairs <- paste(sample_table$group, sample_table$pairs, sep="_")
+      if(length(unique(check_pairs)) != nrow(sample_table)){
+        stop("pairs column in sample_table contains pairings from same group.
+             Technical replication is not supported. If technical replicates are
+             present set \"technical_reps\" to \"TRUE\" and ensure a 
+             \"tech_replicate\" column is included in your \"sample_table\"")
+      }
+    }
+    if(as.numeric(min(summary(unique(sample_table$pairs)))) < 2)
+      stop("sample_table contains pairs with less than two samples")
   }
   
-  bam_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
+  if(!is.null(bam_dir)){
+    input_files <- list.files(bam_dir, full.names = FALSE, pattern = ".bam")
+  }
+  if(!is.null(htseq_dir)){
+    input_files <- list.files(htseq_dir, full.names = FALSE, pattern = ".txt")
+  }
   # must be exact match before proceeding
-  if(length(intersect(bam_files, sample_table$file)) != nrow(sample_table))
+  if(length(intersect(input_files, sample_table$file)) != nrow(sample_table))
     warning(paste("There is not a matching number of files from:\n",
                   sample_table, "\n",
                "in the directory provided:", bam_dir, "\n",
                "Action: Check file names match or correct sample_table
                 file/format provided.", sep=" "))
+
   # if a txdb is not provided, but a gtf object is:
   if(is.null(tx_db) & !is.null(gtf)){
       txdb <- makeTxDbFromGFF(gtf, format="gtf", circ_seqs=character())
@@ -204,28 +273,93 @@ if(is.null(summarized)){
   if(!is.null(tx_db) & is.null(gtf)){
       txdb <- tx_db
   }
-  # extract exon coordinates, by default.
-  ebg <- exonsBy(txdb, by="gene")
-  # Read bam files in
-  bam_files <- paste(bam_dir, sample_table$file, sep="")
-  bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+  # optional mapping methods (only valid if reading in bam files?)
+  if(!is.null(bam_dir) & map_reads == "transcript"){
+     ebg <- transcriptsBy(x = txdb, by = "gene")
+  }
+  if(!is.null(bam_dir) & map_reads == "exon"){
+    ebg <- exonsBy(x = txdb, by = "gene")
+  }
+  if(!is.null(bam_dir) & map_reads == "cds"){
+    ebg <- cdsBy(x = txdb, by = "gene")
+  }
+  if(!is.null(htseq_dir)){
+    if(verbose){
+      message("HTseq counts selected. Txdb will be summarized at exon level.")
+    }
+    ebg <- exonsBy(x = txdb, by = "gene")
+  }
   if(verbose){
     message("# Building summarized experiment")
   }
-  # this is fine for RNA-seq, as it may be possible that only one of the pairs
-  # aligns to the feature of interest due to transcript annotaiton. There is an
-  # option to turn off.
-  se <- summarizeOverlaps(features = ebg,
-                          reads = bamfiles,
-                          mode = mapping_mode,
-                          singleEnd = singleEnd_paired,
-                          ignore.strand = ignore_strand,
-                          fragments = fragments)
-
+  if(!is.null(htseq_dir)){
+    # list files
+    htseq_files <- paste(htseq_dir, sample_table$file, sep="")
+    # read files into tables
+    htseq_files <- lapply(seq_along(htseq_files), function(i)
+                    read.table(htseq_files[i], 
+                               col.names = c("ID", 
+                                             as.character(sample_table$file[i]))))
+    #  merge together...
+    counts <- Reduce(function(...) merge(..., all=TRUE, by="ID"), htseq_files) 
+    # some stats to keep
+    stats <- data.frame(counts[grep("__", counts$ID),])
+    #remove from counts
+    counts <- counts[!as.character(counts$ID) %in% as.character(stats$ID),]
+    rownames(counts) <- counts$ID
+    counts <- counts[!colnames(counts) %in% c("ID")]
+    se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)))
+    rowRanges(se) <- ebg
+    #metadata(se)$stats <- stats
+    }
+  
+  if(!is.null(bam_dir)){
+    # establish bam files to read in
+    bam_files <- paste(bam_dir, sample_table$file, sep="")
+    bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+    se <- summarizeOverlaps(features = ebg,
+                            reads = bamfiles,
+                            mode = mapping_mode,
+                            singleEnd = singleEnd_paired,
+                            ignore.strand = ignore_strand,
+                            fragments = fragments)
+  }
+  
   # ensure SE is labelled (important for model fits later)
   colData(se) <- S4Vectors::DataFrame(sample_table)
   colnames(se) <- sample_table$file
+  #colnames(se) <- make.names(sample_table$file)
 
+  #will rebuild the SE if technical_reps is true
+  if(technical_reps == TRUE){
+    # perform sample merging here and update sample_table 
+    what_to_merge <- unique(data.frame(colData(se))$tech_replicate)
+    multiplex_data <- lapply(seq_along(what_to_merge), function(x)
+                            subset_se(se_in = se, 
+                                      multiplex_id = what_to_merge[x]))
+    # merge together...
+    counts <- Reduce(function(...) merge(..., all=TRUE, by="ID"), multiplex_data) 
+    rownames(counts) <- counts$ID
+    counts <- counts[!colnames(counts) %in% c("ID")]
+    se <- SummarizedExperiment(assays=SimpleList(counts=as.matrix(counts)))
+    rowRanges(se) <- ebg
+    
+    #update the sample_table $file lables
+    update_sample_table <- sample_table[colnames(sample_table) %in% c("file", "group", "pairs", "tech_replicate")]
+    update_sample_table$file <- update_sample_table$tech_replicate
+    
+    # ensure SE is labelled (important for model fits later)
+    colData(se) <- S4Vectors::DataFrame(unique(update_sample_table))
+    colnames(se) <- colnames(counts)
+    #colnames(se) <- make.names(sample_table$file)
+  }
+  
+  # add metadata to summarized object
+  metadata(se)$gene_coords <- genes(txdb)
+  metadata(se)$sample_table <- sample_table
+  #metadata(se)$consensusDE_parameters <-
+  metadata(se)$stats <- stats
+  
   # name will be the filename, not including dir.
   # save se for future use
   if(!is.null(output_log)){
@@ -235,6 +369,7 @@ if(is.null(summarized)){
               paste(output_log, "se.R", sep=""))
     }
   }
+
 se_out <- se
 }
 
@@ -286,6 +421,10 @@ if(!is.null(summarized)){
              Update the summarized experiment with the experimental details
              before processing to DE analysis")
   }
+  if(is.null(tx_db) == FALSE){
+    metadata(se_out)$gene_coords <- genes(tx_db)
+    message("A txdb was provided as input. Meta-data has been updated")
+  }
 
   if(!is.null(output_log)){
     se <- se_out
@@ -297,10 +436,10 @@ if(!is.null(summarized)){
   }
 }
 
-# report table and number of bam files (either from input, or from se file)
+# report table and number of samples (either from input, or from se file)
 if(verbose){
-  message(sample_table)
-  message("#", nrow(sample_table), "bam file[s] selected")
+  #message(sample_table)
+  message("#", nrow(sample_table), "sample[s] present")
 }
 
 # option to write sample_table to log dir
@@ -324,4 +463,20 @@ if(filter == TRUE){
     message("# summarizedFile ready for further analysis")
   }
 return(se_out)
+}
+
+  
+# this function is for summing over multi-plex samples
+# here multi-plexed refers to the same techical replicate samples accross
+# multiple lanes
+# therefore total read count is the sum of the reads
+subset_se <- function(se_in = NA, 
+                      multiplex_id = NA){
+  se.subset <- subset(se_in, select = colData(se_in)$file %in% 
+                        data.frame(colData(se_in))[data.frame(colData(se_in))$tech_replicate == multiplex_id,]$file)
+  
+  se.subset <- data.frame(apply(assays(se.subset)$counts, 1, sum))
+  se.subset$ID <- rownames(se.subset)
+  colnames(se.subset)[1] <- multiplex_id
+return(se.subset)
 }
