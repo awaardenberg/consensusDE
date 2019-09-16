@@ -191,6 +191,14 @@ if("group" %in% colnames(sample_table) == FALSE){
   stop("For unpaired data, a table must be supplied with a column labelled 
        \"group\"")
 }
+
+if(!is.null(names(summary(sample_table$group)[summary(sample_table$group) < 2]))){
+  warning("sample_table provided contained groups with less than 2 replicates!")
+  warning(paste(names(summary(sample_table$group)[summary(sample_table$group) < 2]),
+                collapse="\t"),
+          "\tDo NOT contain biological replicates!")
+}
+
 if((paired != "paired") & (paired != "unpaired"))
   stop("paired can only be either \"paired\" or \"unpaired\". Please specify\n")
 if(paired == "paired" & ("pairs" %in% colnames(sample_table) == FALSE)){
@@ -763,16 +771,24 @@ merge_results <- function(x, y, z,
 
 # determine means for a matrix and vector of common columns
 table_means <- function(count_matrix, matrix_names){
-    colnames(count_matrix) <- matrix_names
-    mean_counts <- data.frame("ID"=rownames(count_matrix),
-                        sapply(seq_len(length(unique(colnames(count_matrix)))),
-                               function(i)
-                                 rowMeans(count_matrix[,colnames(count_matrix)
-                                    %in% unique(colnames(count_matrix))[i]])))
-    colnames(mean_counts) <- c("ID", paste(unique(colnames(count_matrix)),
-                                           "_mean", sep=""))
-return(mean_counts)
+  colnames(count_matrix) <- matrix_names
+  # samples with less than two replicates (cannot take mean)
+  # ensure will work with n=1
+  l2 <- data.frame(count_matrix[,colnames(count_matrix) %in% names(summary(matrix_names)[summary(matrix_names) < 2])])
+  colnames(l2) <- names(summary(matrix_names)[summary(matrix_names) < 2])
+  # for samples with >= samples (take the mean)
+  g2 <- count_matrix[,colnames(count_matrix) %in% names(summary(matrix_names)[summary(matrix_names) >= 2])]
+  mean_counts <- data.frame("ID"=rownames(g2),
+                            sapply(seq_len(length(unique(colnames(g2)))),
+                                   function(i)
+                                     rowMeans(g2[,colnames(g2)
+                                                 %in% unique(colnames(g2))[i]])))
+  mean_counts <- cbind(mean_counts, l2)
+  colnames(mean_counts) <- c("ID", paste(unique(colnames(g2)),"_mean", sep=""),
+                             paste(colnames(l2),"_mean", sep=""))
+  return(mean_counts)
 }
+
 
 # function to automate contrast matrix creation of all pairs
 build_contrast_matrix <- function(table_design, design){

@@ -1,3 +1,7 @@
+Changes in version 1.3.4 (2019-09-16)
++ table_means function of multi_de_pairs updated to be n=1 aware
++ add warning when less than two biological replicates
+
 Changes in version 1.3.3 (2019-06-27)
 + norm_method paramter in multi_de_pairs to allow only EDASeq normalisation 
 
