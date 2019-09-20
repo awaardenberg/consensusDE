@@ -192,7 +192,7 @@ if("group" %in% colnames(sample_table) == FALSE){
        \"group\"")
 }
 
-if(!is.null(names(summary(sample_table$group)[summary(sample_table$group) < 2]))){
+if(length(names(summary(sample_table$group)[summary(sample_table$group) < 2])) != 0L){
   warning("sample_table provided contained groups with less than 2 replicates!")
   warning(paste(names(summary(sample_table$group)[summary(sample_table$group) < 2]),
                 collapse="\t"),
@@ -771,21 +771,43 @@ merge_results <- function(x, y, z,
 
 # determine means for a matrix and vector of common columns
 table_means <- function(count_matrix, matrix_names){
-  colnames(count_matrix) <- matrix_names
+  #colnames(count_matrix) <- matrix_names
   # samples with less than two replicates (cannot take mean)
   # ensure will work with n=1
-  l2 <- data.frame(count_matrix[,colnames(count_matrix) %in% names(summary(matrix_names)[summary(matrix_names) < 2])])
-  colnames(l2) <- names(summary(matrix_names)[summary(matrix_names) < 2])
-  # for samples with >= samples (take the mean)
-  g2 <- count_matrix[,colnames(count_matrix) %in% names(summary(matrix_names)[summary(matrix_names) >= 2])]
-  mean_counts <- data.frame("ID"=rownames(g2),
-                            sapply(seq_len(length(unique(colnames(g2)))),
-                                   function(i)
-                                     rowMeans(g2[,colnames(g2)
-                                                 %in% unique(colnames(g2))[i]])))
-  mean_counts <- cbind(mean_counts, l2)
-  colnames(mean_counts) <- c("ID", paste(unique(colnames(g2)),"_mean", sep=""),
-                             paste(colnames(l2),"_mean", sep=""))
+  
+  if(length(names(summary(matrix_names)[summary(matrix_names) < 2])) != 0L){
+    l2 <- data.frame(count_matrix[,matrix_names %in% names(summary(matrix_names)[summary(matrix_names) < 2])])
+    l2_names <- matrix_names[matrix_names %in% names(summary(matrix_names)[summary(matrix_names) < 2])]
+    
+    #colnames(l2) <- names(summary(matrix_names)[summary(matrix_names) < 2])
+    # for samples with >= samples (take the mean)
+    g2 <- count_matrix[,matrix_names %in% names(summary(matrix_names)[summary(matrix_names) >= 2])]
+    matrix_names_g2 <- matrix_names[matrix_names %in% names(summary(matrix_names)[summary(matrix_names) >= 2])]
+    
+    mean_counts <- data.frame("ID"=rownames(g2),
+                              sapply(seq_len(length(unique(matrix_names_g2))),
+                                     function(i)
+                                       rowMeans(g2[,matrix_names_g2
+                                                   %in% unique(matrix_names_g2)[i]])))
+    mean_counts <- cbind(mean_counts, l2)
+    colnames(mean_counts) <- c("ID", paste(unique(matrix_names_g2),"_mean", sep=""),
+                               paste(l2_names,"_mean", sep=""))
+  }
+  
+  # no replicates less than two
+  if(length(names(summary(matrix_names)[summary(matrix_names) < 2])) == 0L){
+    g2 <- count_matrix
+    mean_counts <- data.frame("ID"=rownames(g2),
+                              sapply(seq_len(length(unique(matrix_names))),
+                                     function(i)
+                                       rowMeans(g2[,matrix_names
+                                                   %in% unique(matrix_names)[i]])))
+    colnames(mean_counts) <- c("ID", paste(unique(matrix_names),"_mean", sep=""))
+  }
+  
+  
+  
+  
   return(mean_counts)
 }
 
