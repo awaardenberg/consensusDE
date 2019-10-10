@@ -24,8 +24,7 @@ Changes in version 1.3.1 (2019-06-18)
 + disabled cooksCutoff for DESeq2 for comparability of all p-value rankings
 + add option gtf_annotate multi_de_pairs for annotation of gene symbols from gtf and combine with tx_db
 + update vignette
-
-Version 1.3.0 (BioC 3.9 update)
++ version 1.3.0 onwards is BioC 3.9
 
 Changes in version 1.0.7 (2019-03-01)
 + export RUV corrected summarized file before model fit
