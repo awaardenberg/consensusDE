@@ -8,8 +8,9 @@ buildSummarized(sample_table = NULL, bam_dir = NULL,
   htseq_dir = NULL, gtf = NULL, tx_db = NULL,
   technical_reps = FALSE, map_reads = "transcript",
   mapping_mode = "Union", read_format = NULL, ignore_strand = FALSE,
-  fragments = TRUE, summarized = NULL, output_log = NULL,
-  filter = FALSE, BamFileList_yiedsize = NA_integer_, n_cores = 1,
+  preprocess_reads = NULL, fragments = TRUE, summarized = NULL,
+  output_log = NULL, filter = FALSE,
+  BamFileList_yiedsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -58,6 +59,9 @@ read are summarized from BAM files. Default = NULL}
 
 \item{ignore_strand}{Ignore strand when mapping reads? see "ignore_strand" in
 ?summarizeOverlaps for explanation. Default = FALSE}
+
+\item{preprocess_reads}{A function applied to the reads before counting. See
+?summarizeOverlaps preprocess.reads for explanation. Default = NULL}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
