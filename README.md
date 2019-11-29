@@ -1,3 +1,5 @@
+Forked from awaardenberg/consensusDE to check summarizeOverlaps with strandMode and paired data
+
 # consensusDE
 
 consensusDE is an R package for RNA-seq analysis using multiple algorithms - reaching consensus.
