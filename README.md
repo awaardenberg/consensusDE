@@ -6,11 +6,19 @@ consensusDE is an R package for RNA-seq analysis using multiple algorithms - rea
 
 ## Installing consensusDE
 
-To obtain the latest version from github, install devtools in R and use the following:
+To obtain the original version from github, install devtools in R and use the following:
 
 ```R
 library(devtools)
 devtools::install_github("awaardenberg/consensusDE", build_vignettes = TRUE)
+
+```
+
+To obtain this version: 
+```R
+library(devtools)
+devtools::install_github("marthacooper/consensusDE", build_vignettes = TRUE)
+
 ```
 
 ## Examples
