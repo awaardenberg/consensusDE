@@ -64,7 +64,7 @@ read are summarized from BAM files. Default = NULL}
 ?summarizeOverlaps preprocess.reads for explanation. Default = NULL}
 
 \item{as_mates}{For paired end reads, logical indicating is recoreds should be
-paired as mates. See ?BamFileList for more info. Default = FALSE}
+paired asMates. See ?BamFileList for more info. Default = FALSE}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
