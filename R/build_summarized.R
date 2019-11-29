@@ -46,6 +46,8 @@
 #' ?summarizeOverlaps for explanation. Default = FALSE
 #' @param preprocess_reads A function applied to the reads before counting. See
 #' ?summarizeOverlaps preprocess.reads for explanation. Default = NULL
+#' @param asMates For paired end reads, logical indicating is recoreds should be
+#' paired as mates. See ?BamFileList for more info. Default = FALSE
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default = TRUE
@@ -123,6 +125,7 @@ buildSummarized <- function(sample_table = NULL,
                             read_format = NULL,
                             ignore_strand = FALSE,
                             preprocess_reads = NULL,
+                            as_mates= FALSE,
                             fragments = TRUE,
                             summarized = NULL,
                             output_log = NULL,
@@ -319,7 +322,7 @@ if(is.null(summarized)){
   if(!is.null(bam_dir)){
     # establish bam files to read in
     bam_files <- paste(bam_dir, sample_table$file, sep="")
-    bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+    bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize, asMates = as_mates)
     se <- summarizeOverlaps(features = ebg,
                             reads = bamfiles,
                             mode = mapping_mode,

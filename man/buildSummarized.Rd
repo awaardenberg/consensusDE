@@ -8,8 +8,8 @@ buildSummarized(sample_table = NULL, bam_dir = NULL,
   htseq_dir = NULL, gtf = NULL, tx_db = NULL,
   technical_reps = FALSE, map_reads = "transcript",
   mapping_mode = "Union", read_format = NULL, ignore_strand = FALSE,
-  preprocess_reads = NULL, fragments = TRUE, summarized = NULL,
-  output_log = NULL, filter = FALSE,
+  preprocess_reads = NULL, as_mates = FALSE, fragments = TRUE,
+  summarized = NULL, output_log = NULL, filter = FALSE,
   BamFileList_yiedsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
@@ -92,6 +92,9 @@ group, force a summarizedExperiment object to be built. Otherwise
 buildSummarized will halt. Default = FALSE.}
 
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
+
+\item{asMates}{For paired end reads, logical indicating is recoreds should be
+paired as mates. See ?BamFileList for more info. Default = FALSE}
 }
 \value{
 A summarized experiment
