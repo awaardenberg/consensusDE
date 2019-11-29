@@ -44,6 +44,8 @@
 #' read are summarized from BAM files. Default = NULL
 #' @param ignore_strand Ignore strand when mapping reads? see "ignore_strand" in
 #' ?summarizeOverlaps for explanation. Default = FALSE
+#' @param preprocess_reads A function applied to the reads before counting. See
+#' ?summarizeOverlaps preprocess.reads for explanation. Default = NULL
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default = TRUE
@@ -120,6 +122,7 @@ buildSummarized <- function(sample_table = NULL,
                             mapping_mode = "Union",
                             read_format = NULL,
                             ignore_strand = FALSE,
+                            preprocess_reads = NULL,
                             fragments = TRUE,
                             summarized = NULL,
                             output_log = NULL,
@@ -322,7 +325,8 @@ if(is.null(summarized)){
                             mode = mapping_mode,
                             singleEnd = singleEnd_paired,
                             ignore.strand = ignore_strand,
-                            fragments = fragments)
+                            fragments = fragments,
+                            preprocess.reads = preprocess_reads)
   }
   
   # ensure SE is labelled (important for model fits later)
