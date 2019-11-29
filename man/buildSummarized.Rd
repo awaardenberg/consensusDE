@@ -63,6 +63,9 @@ read are summarized from BAM files. Default = NULL}
 \item{preprocess_reads}{A function applied to the reads before counting. See
 ?summarizeOverlaps preprocess.reads for explanation. Default = NULL}
 
+\item{as_mates}{For paired end reads, logical indicating is recoreds should be
+paired as mates. See ?BamFileList for more info. Default = FALSE}
+
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
  for explanation. Default = TRUE}
@@ -92,9 +95,6 @@ group, force a summarizedExperiment object to be built. Otherwise
 buildSummarized will halt. Default = FALSE.}
 
 \item{verbose}{Verbosity ON/OFF. Default=FALSE}
-
-\item{asMates}{For paired end reads, logical indicating is recoreds should be
-paired as mates. See ?BamFileList for more info. Default = FALSE}
 }
 \value{
 A summarized experiment
