@@ -9,7 +9,7 @@ buildSummarized(sample_table = NULL, bam_dir = NULL,
   technical_reps = FALSE, map_reads = "transcript",
   mapping_mode = "Union", read_format = NULL, strand_mode = 1,
   fragments = FALSE, summarized = NULL, output_log = NULL,
-  filter = FALSE, BamFileList_yiedsize = NA_integer_, n_cores = 1,
+  filter = FALSE, BamFileList_yieldsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -75,7 +75,7 @@ summarized experiment generated.}
 summarized experiment file? This uses default filtering via "filterByExpr".
 See ?filterByExpr for further information. Default = FALSE}
 
-\item{BamFileList_yiedsize}{If running into memory problems. Set the number
+\item{BamFileList_yieldsize}{If running into memory problems. Set the number
 of lines to an integer value. See "yieldSize" description in ?BamFileList for
  an explanation.}
 

@@ -56,7 +56,7 @@
 #' @param filter Perform filtering of low count and missing data from the
 #' summarized experiment file? This uses default filtering via "filterByExpr".
 #' See ?filterByExpr for further information. Default = FALSE
-#' @param BamFileList_yiedsize If running into memory problems. Set the number
+#' @param BamFileList_yieldsize If running into memory problems. Set the number
 #' of lines to an integer value. See "yieldSize" description in ?BamFileList for
 #'  an explanation.
 #' @param n_cores Number of cores to utilise for reading in Bam files. Use with
