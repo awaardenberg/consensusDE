@@ -146,12 +146,14 @@ buildSummarized <- function(sample_table = NULL,
            bam files.")
       }
       # define modes for summarizeOverlaps
+      ## paired end vs single end
       if(read_format == "paired"){
         singleEnd_paired <- FALSE
       }
       if(read_format == "single"){
         singleEnd_paired <- TRUE
       }
+      ## strandMode
       if(strand_mode == 0){
         ignore_strand = TRUE
         preprocess.reads = NULL
