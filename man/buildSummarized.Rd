@@ -8,7 +8,7 @@ buildSummarized(sample_table = NULL, bam_dir = NULL,
   htseq_dir = NULL, gtf = NULL, tx_db = NULL,
   technical_reps = FALSE, map_reads = "transcript",
   mapping_mode = "Union", read_format = NULL, strand_mode = 1,
-  fragments = TRUE, summarized = NULL, output_log = NULL,
+  fragments = FALSE, summarized = NULL, output_log = NULL,
   filter = FALSE, BamFileList_yiedsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
