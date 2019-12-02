@@ -60,7 +60,7 @@
 #' of lines to an integer value. See "yieldSize" description in ?BamFileList for
 #'  an explanation.
 #' @param n_cores Number of cores to utilise for reading in Bam files. Use with
-#' caution as can create memory issues if BamFileList_yiedsize is not
+#' caution as can create memory issues if BamFileList_yieldsize is not
 #' parameterised. Default = 1
 #' @param force_build If the sample_table contains less than two replicates per
 #' group, force a summarizedExperiment object to be built. Otherwise 
@@ -178,7 +178,7 @@ buildSummarized <- function(sample_table = NULL,
     stop("technical_reps can only be either \"TRUE\" or \"FALSE\". Please specify")
   
   # be careful with more than one worker here: is extremely memory intense!
-  # check n_cores is integer; BamFileList_yiedsize is NA_integer_ or an integer...
+  # check n_cores is integer; BamFileList_yieldsize is NA_integer_ or an integer...
   is_wholenumber <-
     function(x,
              tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
@@ -334,11 +334,11 @@ buildSummarized <- function(sample_table = NULL,
       bam_files <- paste(bam_dir, sample_table$file, sep="")
       
       if(read_format == "paired"){
-        bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize, 
+        bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yieldsize, 
                                 asMates = TRUE)
       }
        if(read_format == "single"){
-         bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yiedsize)
+         bamfiles <- BamFileList(bam_files, yieldSize = BamFileList_yieldsize)
        }
       
       se <- summarizeOverlaps(features = ebg,

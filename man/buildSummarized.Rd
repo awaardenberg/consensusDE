@@ -80,7 +80,7 @@ of lines to an integer value. See "yieldSize" description in ?BamFileList for
  an explanation.}
 
 \item{n_cores}{Number of cores to utilise for reading in Bam files. Use with
-caution as can create memory issues if BamFileList_yiedsize is not
+caution as can create memory issues if BamFileList_yieldsize is not
 parameterised. Default = 1}
 
 \item{force_build}{If the sample_table contains less than two replicates per
