@@ -89,7 +89,11 @@ summarized_dm3 <- buildSummarized(sample_table = sample_table,
 
 ```
 
-This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter. gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save a summarized experiment externally, for future use, specify a path to save the summarized experiment using ```output_log```. To see details of all parameters see ```?buildSummarized```.
+This will output a summarized object that has mapped the reads for the bam files that are listed in ```sample_table```, located in ```bam_dir```, against the transcript database provided: ```TxDb.Dmelanogaster.UCSC.dm3.ensGene```. Bam file format, whether "paired" or "single" end (the type of sequencing technology used) must be specified using the ```read_format``` parameter.gtf formatted transcript databases can also be used instead of a txdb, by providing the full path to the gtf file using the ```gtf``` parameter. To save a summarized experiment externally, for future use, specify a path to save the summarized experiment using ```output_log```. 
+
+```strand_mode``` is used to define how the stranded library prep protocol treated the strand. For paired data, this is used to indicate how the strand is inferred from the first and last fragments in the paired reads. If the protocol was unstranded or stranding should be ignored, ```strand_mode = 0```. ```ConsensusDE``` calls  ```strand_mode = 0``` by default. If the protocol was stranded and the strand of the read is the strand of the first fragment (or read in single ended libraries), ```strand_mode = 1```. If the protocol was stranded and the strand of the read is the strand of the second fragment (or reverse of the read in single ended libraries) , ```strand_mode = 2```. For more information, see ?strandMode in the Genomic Alignments package. 
+
+To see details of all parameters see ```?buildSummarized```.
 
 Overview of the summarized experiment:
 ```{r echo=TRUE}

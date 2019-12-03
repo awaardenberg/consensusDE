@@ -43,7 +43,7 @@
 #' are "paired" or "single". An option must be selected if htseq_dir is NULL and
 #' read are summarized from BAM files. Default = NULL
 #' @param strand_mode indicates how the reads are stranded see ?strandMode in
-#' Genomic Alignments for explanation. Default = 1
+#' Genomic Alignments for explanation. Default = 0 
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
 #'   for explanation. Default = TRUE
@@ -119,7 +119,7 @@ buildSummarized <- function(sample_table = NULL,
                             map_reads = "transcript",
                             mapping_mode = "Union",
                             read_format = NULL,
-                            strand_mode = 1,
+                            strand_mode = 0,
                             fragments = FALSE,
                             summarized = NULL,
                             output_log = NULL,

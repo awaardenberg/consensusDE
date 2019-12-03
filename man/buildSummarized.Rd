@@ -7,7 +7,7 @@
 buildSummarized(sample_table = NULL, bam_dir = NULL,
   htseq_dir = NULL, gtf = NULL, tx_db = NULL,
   technical_reps = FALSE, map_reads = "transcript",
-  mapping_mode = "Union", read_format = NULL, strand_mode = 1,
+  mapping_mode = "Union", read_format = NULL, strand_mode = 0,
   fragments = FALSE, summarized = NULL, output_log = NULL,
   filter = FALSE, BamFileList_yieldsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
@@ -57,7 +57,7 @@ are "paired" or "single". An option must be selected if htseq_dir is NULL and
 read are summarized from BAM files. Default = NULL}
 
 \item{strand_mode}{indicates how the reads are stranded see ?strandMode in
-Genomic Alignments for explanation. Default = 1}
+Genomic Alignments for explanation. Default = 0}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
