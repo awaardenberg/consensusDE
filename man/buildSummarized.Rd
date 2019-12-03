@@ -7,9 +7,9 @@
 buildSummarized(sample_table = NULL, bam_dir = NULL,
   htseq_dir = NULL, gtf = NULL, tx_db = NULL,
   technical_reps = FALSE, map_reads = "transcript",
-  mapping_mode = "Union", read_format = NULL, ignore_strand = FALSE,
-  fragments = TRUE, summarized = NULL, output_log = NULL,
-  filter = FALSE, BamFileList_yiedsize = NA_integer_, n_cores = 1,
+  mapping_mode = "Union", read_format = NULL, strand_mode = 0,
+  fragments = FALSE, summarized = NULL, output_log = NULL,
+  filter = FALSE, BamFileList_yieldsize = NA_integer_, n_cores = 1,
   force_build = FALSE, verbose = FALSE)
 }
 \arguments{
@@ -56,8 +56,9 @@ Default = "Union"}
 are "paired" or "single". An option must be selected if htseq_dir is NULL and
 read are summarized from BAM files. Default = NULL}
 
-\item{ignore_strand}{Ignore strand when mapping reads? see "ignore_strand" in
-?summarizeOverlaps for explanation. Default = FALSE}
+\item{strand_mode}{indicates how the reads are stranded. Options are 
+0 (unstranded); 1 (stranded) and 2 (reversely stranded). see ?strandMode in
+Genomic Alignments for explanation. Default = 0}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do
 not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
@@ -75,12 +76,12 @@ summarized experiment generated.}
 summarized experiment file? This uses default filtering via "filterByExpr".
 See ?filterByExpr for further information. Default = FALSE}
 
-\item{BamFileList_yiedsize}{If running into memory problems. Set the number
+\item{BamFileList_yieldsize}{If running into memory problems. Set the number
 of lines to an integer value. See "yieldSize" description in ?BamFileList for
  an explanation.}
 
 \item{n_cores}{Number of cores to utilise for reading in Bam files. Use with
-caution as can create memory issues if BamFileList_yiedsize is not
+caution as can create memory issues if BamFileList_yieldsize is not
 parameterised. Default = 1}
 
 \item{force_build}{If the sample_table contains less than two replicates per
