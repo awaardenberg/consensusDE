@@ -156,15 +156,15 @@ buildSummarized <- function(sample_table = NULL,
       ## strandMode
       if(strand_mode == 0){
         ignore_strand = TRUE
-        preprocess.reads = NULL
+        preprocess_reads = NULL
       }
       if(strand_mode == 1){
         ignore_strand = FALSE
-        preprocess.reads = NULL
+        preprocess_reads = NULL
       }
       if(strand_mode == 2){
         ignore_strand = FALSE
-        preprocess.reads = invertStrand
+        preprocess_reads = invertStrand
       }
     }
   }
