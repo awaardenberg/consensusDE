@@ -2,8 +2,9 @@ Package: consensusDE
 Type: Package
 Title: RNA-seq analysis using multiple algorithms 
 Version: 1.5.5
-Author: Ashley J. Waardenberg
-Maintainer: Ashley J. Waardenberg <a.waardenberg@gmail.com>
+Authors@R: c(person("Ashley J.", "Waardenberg", email = "a.waardenberg@gmail.com", 
+    role = c("aut", "cre")), person("Martha M.", "Cooper", email = "marthacooper92@gmail.com", 
+    role = c("ctb")))
 Description: This package allows users to perform DE analysis using multiple 
     algorithms. It seeks consensus from multiple methods. Currently it supports 
     "Voom", "EdgeR" and "DESeq". It uses RUV-seq (optional) to remove unwanted 
