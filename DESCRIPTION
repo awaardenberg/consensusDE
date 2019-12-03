@@ -1,6 +1,6 @@
 Package: consensusDE
 Type: Package
-Title: RNA-seq analysis using multiple algorithms 
+Title: RNA-seq analysis using multiple algorithms
 Version: 1.5.1
 Authors@R: c(person("Ashley J.", "Waardenberg", email = "a.waardenberg@gmail.com", 
     role = c("aut", "cre")), person("Martha M.", "Cooper", email = "marthacooper92@gmail.com", 
