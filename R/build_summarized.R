@@ -171,7 +171,7 @@ buildSummarized <- function(sample_table = NULL,
       if(strand_mode == 1){
         ignore_strand = FALSE
         preprocess_reads = NULL
-        message("strand_mode if defined as 1 (stranded). For single end reads, this
+        message("strand_mode is defined as 1 (stranded). For single end reads, this
                 indicates the strant of the read is the strand of the alignment. 
                 For paired end reads, this indicates that the strand of the pair is
                 the strand of it's first alignment. Examples of stranded protocols
@@ -182,7 +182,7 @@ buildSummarized <- function(sample_table = NULL,
       if(strand_mode == 2){
         ignore_strand = FALSE
         preprocess_reads = invertStrand
-        message("strand_mode if defined as 2 (reversely stranded). For single end
+        message("strand_mode is defined as 2 (reversely stranded). For single end
                 reads, this indicates the strand of the read is the antisense of
                 the strand of the alignment. For paired end reads, this indicates
                 that the strand of the pair is the strand of it's last alignment.
