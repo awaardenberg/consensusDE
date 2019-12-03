@@ -57,12 +57,12 @@ are "paired" or "single". An option must be selected if htseq_dir is NULL and
 read are summarized from BAM files. Default = NULL}
 
 \item{strand_mode}{indicates how the reads are stranded. Options are 
-0 (unstranded); 1 (stranded) and 2 (reversely stranded). see ?strandMode in
+0 (unstranded); 1 (stranded) and 2 (reverse strandedness). see ?strandMode in
 Genomic Alignments for explanation. Default = 0}
 
-\item{fragments}{When mapping_mode="paired", include reads from pairs that do
-not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
- for explanation. Default = TRUE}
+\item{fragments}{When mapping_mode = "paired", include reads from pairs that 
+do not map with their corresponding pair? see "fragments" in
+ ?summarizeOverlaps for explanation. Default = TRUE}
 
 \item{summarized}{Full path to a summarized experiment file. If
 buildSummarized() has already been performed, the output summarized file,
@@ -88,7 +88,7 @@ parameterised. Default = 1}
 group, force a summarizedExperiment object to be built. Otherwise 
 buildSummarized will halt. Default = FALSE.}
 
-\item{verbose}{Verbosity ON/OFF. Default=FALSE}
+\item{verbose}{Verbosity ON/OFF. Default = FALSE}
 }
 \value{
 A summarized experiment

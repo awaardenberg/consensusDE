@@ -43,11 +43,11 @@
 #' are "paired" or "single". An option must be selected if htseq_dir is NULL and
 #' read are summarized from BAM files. Default = NULL
 #' @param strand_mode indicates how the reads are stranded. Options are 
-#' 0 (unstranded); 1 (stranded) and 2 (reversely stranded). see ?strandMode in
+#' 0 (unstranded); 1 (stranded) and 2 (reverse strandedness). see ?strandMode in
 #' Genomic Alignments for explanation. Default = 0 
-#' @param fragments When mapping_mode="paired", include reads from pairs that do
-#'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
-#'   for explanation. Default = TRUE
+#' @param fragments When mapping_mode = "paired", include reads from pairs that 
+#' do not map with their corresponding pair? see "fragments" in
+#'  ?summarizeOverlaps for explanation. Default = TRUE
 #' @param summarized Full path to a summarized experiment file. If
 #' buildSummarized() has already been performed, the output summarized file,
 #' saved in "/output_log/se.R" can be used as the input (e.g. if filtering is to
@@ -66,7 +66,7 @@
 #' @param force_build If the sample_table contains less than two replicates per
 #' group, force a summarizedExperiment object to be built. Otherwise 
 #' buildSummarized will halt. Default = FALSE.
-#' @param verbose Verbosity ON/OFF. Default=FALSE
+#' @param verbose Verbosity ON/OFF. Default = FALSE
 #'
 #' @examples
 #' ## Extract summarized following example in the vignette
@@ -165,27 +165,27 @@ buildSummarized <- function(sample_table = NULL,
         preprocess_reads = NULL
         message("strand_mode is defined as 0 (unstranded). This is appropriate for 
                 unstranded protocols, or if you wish to ignore strandedness when
-                counting reads.See ?strandMode in Genomic Alignments for more 
+                counting reads. See ?strandMode in GenomicAlignments for more 
                 information.")
       }
       if(strand_mode == 1){
         ignore_strand = FALSE
         preprocess_reads = NULL
         message("strand_mode is defined as 1 (stranded). For single end reads, this
-                indicates the strant of the read is the strand of the alignment. 
+                indicates the strand of the read is the strand of the alignment. 
                 For paired end reads, this indicates that the strand of the pair is
-                the strand of it's first alignment. Examples of stranded protocols
+                the strand of the first pair. Examples of stranded protocols
                 for which this strand mode is appropriate are Directional Illumina
-                (ligation), and Standard SOLiD. See ?strandMode in Genomic 
-                Alignments for more information.")
+                (ligation), and Standard SOLiD. See ?strandMode in 
+                GenomicAlignments for more information.")
       }
       if(strand_mode == 2){
         ignore_strand = FALSE
         preprocess_reads = invertStrand
-        message("strand_mode is defined as 2 (reversely stranded). For single end
+        message("strand_mode is defined as 2 (reverse strand). For single end
                 reads, this indicates the strand of the read is the antisense of
                 the strand of the alignment. For paired end reads, this indicates
-                that the strand of the pair is the strand of it's last alignment.
+                that the strand of the pair is the strand of the last pair.
                 Examples of stranded protocols for which this strand mode is
                 appropriate are dUTP, NSR, NNSR, Illumina stranded TruSeq PE
                 protocol. See ?strandMode in Genomic Alignments for more
