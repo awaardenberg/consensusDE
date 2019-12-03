@@ -1,7 +1,7 @@
-Changes in version 1.5.5 (2019-12-03)
+Changes in version 1.5.1 (2019-12-03)
 + strand_mode argument replaces ignore_strand in buildSummarized.
 + fragments default in buildSummarized changed to FALSE
-+ update vignette 
++ update vignette
 
 Changes in version 1.3.4 (2019-09-16)
 + table_means function of multi_de_pairs updated to be n=1 aware
