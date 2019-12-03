@@ -147,8 +147,9 @@ buildSummarized <- function(sample_table = NULL,
            bam files.")
       }
       if(!(strand_mode %in% c(0,1,2))){
-        stop("strand_mode must be defined as either 0, 1, or 2. See ?strandMode
-             in Genomic Alignments for more information")
+        stop("strand_mode must be defined as either 0 (unstranded),
+             1 (stranded), or 2 (reversely stranded). See ?strandMode
+             in Genomic Alignments for more information. ")
       }
       # define modes for summarizeOverlaps
       ## paired end vs single end
