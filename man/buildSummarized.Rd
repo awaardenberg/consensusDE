@@ -56,7 +56,8 @@ Default = "Union"}
 are "paired" or "single". An option must be selected if htseq_dir is NULL and
 read are summarized from BAM files. Default = NULL}
 
-\item{strand_mode}{indicates how the reads are stranded see ?strandMode in
+\item{strand_mode}{indicates how the reads are stranded. Options are 
+0 (unstranded); 1 (stranded) and 2 (reversely stranded). see ?strandMode in
 Genomic Alignments for explanation. Default = 0}
 
 \item{fragments}{When mapping_mode="paired", include reads from pairs that do

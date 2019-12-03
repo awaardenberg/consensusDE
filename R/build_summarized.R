@@ -42,7 +42,8 @@
 #' @param read_format Are the reads from single-end or paired-end data? Option
 #' are "paired" or "single". An option must be selected if htseq_dir is NULL and
 #' read are summarized from BAM files. Default = NULL
-#' @param strand_mode indicates how the reads are stranded see ?strandMode in
+#' @param strand_mode indicates how the reads are stranded. Options are 
+#' 0 (unstranded); 1 (stranded) and 2 (reversely stranded). see ?strandMode in
 #' Genomic Alignments for explanation. Default = 0 
 #' @param fragments When mapping_mode="paired", include reads from pairs that do
 #'  not map with their corresponding pair? see "fragments" in ?summarizeOverlaps
@@ -145,6 +146,10 @@ buildSummarized <- function(sample_table = NULL,
          a summarized file has not been generated and read counting is from
            bam files.")
       }
+      if(!(strand_mode %in% c(0,1,2))){
+        stop("strand_mode must be defined as either 0, 1, or 2. See ?strandMode
+             in Genomic Alignments for more information")
+      }
       # define modes for summarizeOverlaps
       ## paired end vs single end
       if(read_format == "paired"){
@@ -157,14 +162,33 @@ buildSummarized <- function(sample_table = NULL,
       if(strand_mode == 0){
         ignore_strand = TRUE
         preprocess_reads = NULL
+        message("strand_mode is defined as 0 (unstranded). This is appropriate for 
+                unstranded protocols, or if you wish to ignore strandedness when
+                counting reads.See ?strandMode in Genomic Alignments for more 
+                information.")
       }
       if(strand_mode == 1){
         ignore_strand = FALSE
         preprocess_reads = NULL
+        message("strand_mode if defined as 1 (stranded). For single end reads, this
+                indicates the strant of the read is the strand of the alignment. 
+                For paired end reads, this indicates that the strand of the pair is
+                the strand of it's first alignment. Examples of stranded protocols
+                for which this strand mode is appropriate are Directional Illumina
+                (ligation), and Standard SOLiD. See ?strandMode in Genomic 
+                Alignments for more information.")
       }
       if(strand_mode == 2){
         ignore_strand = FALSE
         preprocess_reads = invertStrand
+        message("strand_mode if defined as 2 (reversely stranded). For single end
+                reads, this indicates the strand of the read is the antisense of
+                the strand of the alignment. For paired end reads, this indicates
+                that the strand of the pair is the strand of it's last alignment.
+                Examples of stranded protocols for which this strand mode is
+                appropriate are dUTP, NSR, NNSR, Illumina stranded TruSeq PE
+                protocol. See ?strandMode in Genomic Alignments for more
+                information.")
       }
     }
   }
@@ -301,7 +325,8 @@ buildSummarized <- function(sample_table = NULL,
     }
     if(!is.null(htseq_dir)){
       if(verbose){
-        message("HTseq counts selected. Txdb will be summarized at exon level.")
+        message("HTseq counts selected. Txdb will be summarized at exon level.
+                read_format and strand_mode will be ignored.")
       }
       ebg <- exonsBy(x = txdb, by = "gene")
     }
@@ -309,6 +334,7 @@ buildSummarized <- function(sample_table = NULL,
       message("# Building summarized experiment")
     }
     if(!is.null(htseq_dir)){
+      
       # list files
       htseq_files <- paste(htseq_dir, sample_table$file, sep="")
       # read files into tables
